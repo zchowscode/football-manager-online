@@ -404,13 +404,15 @@ app.get('/api/seed-players', async (req, res) => {
       const cols = lines[i].split(',');
       const get = (name) => cols[headers.indexOf(name)]?.replace(/"/g, '').trim() || null;
 
-      const name = get('player');
-      const position = get('position');
-      const age = parseInt(get('age')) || 22;
-      const nationality = get('nationality');
-      const overall = Math.min(99, Math.max(40, parseInt(get('overall_rating') || get('rating') || get('ova')) || 70));
+     const name = get('Player');
+      const position = get('Pos');
+      const age = parseInt(get('Age')) || 22;
+      const nationality = get('Nation');
+      const goals = parseInt(get('Gls')) || 0;
+      const assists = parseInt(get('Ast')) || 0;
+      const overall = Math.min(90, Math.max(50, 60 + goals + assists));
 
-      if (!name) continue;
+      if (!name || name === 'Player') continue;
 
       await pool.execute(
         "INSERT IGNORE INTO players (name, position, overall_rating, potential, age, nationality, pace, shooting, passing, dribbling, defending, physical, reputation, happiness) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
