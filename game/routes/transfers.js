@@ -2,63 +2,148 @@ const express = require('express');
 const router = express.Router();
 const { calculatePlayerDecision } = require('../game/poaching');
 
+// POST A BID
 router.post('/bid', async (req, res) => {
   const { player_id, from_club_id, offered_wage, offered_years, bid_amount } = req.body;
   const pool = req.pool;
-  const client = await pool.connect();
+  const conn = await pool.getConnection();
   try {
-    await client.query('BEGIN');
-    const playerResult = await client.query('SELECT * FROM players WHERE id = $1 FOR UPDATE', [player_id]);
-    if (!playerResult.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Player not found' }); }
-    const player = playerResult.rows[0];
-    const existingBid = await client.query(`SELECT id FROM transfer_bids WHERE player_id = $1 AND status = 'pending'`, [player_id]);
-    if (existingBid.rows.length) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Player already has a pending bid' }); }
-    const contract = await client.query('SELECT * FROM contracts WHERE player_id = $1 AND active = true', [player_id]);
-    if (contract.rows.length && contract.rows[0].no_poach_until_week > (global.currentWeek || 1)) {
-      await client.query('ROLLBACK');
+    await conn.beginTransaction();
+
+    const [[player]] = await conn.execute(
+      'SELECT * FROM players WHERE id = ? FOR UPDATE', [player_id]
+    );
+    if (!player) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const [existingBid] = await conn.execute(
+      "SELECT id FROM transfer_bids WHERE player_id = ? AND status = 'pending'", [player_id]
+    );
+    if (existingBid.length) {
+      await conn.rollback();
+      return res.status(400).json({ error: 'Player already has a pending bid' });
+    }
+
+    const [[contract]] = await conn.execute(
+      'SELECT * FROM contracts WHERE player_id = ? AND active = true', [player_id]
+    );
+    if (contract && contract.no_poach_until_week > (global.currentWeek || 1)) {
+      await conn.rollback();
       return res.status(400).json({ error: 'Player recently signed - cannot be poached yet' });
     }
-    const bidResult = await client.query(
-      `INSERT INTO transfer_bids (player_id, from_club_id, to_club_id, bid_amount, offered_wage, offered_years, expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6, NOW() + INTERVAL '48 hours') RETURNING *`,
+
+    const [result] = await conn.execute(
+      `INSERT INTO transfer_bids 
+        (player_id, from_club_id, to_club_id, bid_amount, offered_wage, offered_years, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 48 HOUR))`,
       [player_id, player.club_id, from_club_id, bid_amount, offered_wage, offered_years]
     );
-    await client.query('COMMIT');
-    const defendingClub = await pool.query('SELECT manager_id FROM clubs WHERE id = $1', [player.club_id]);
-    if (defendingClub.rows[0]?.manager_id && req.sendNotification) {
-      req.sendNotification(defendingClub.rows[0].manager_id, 'poach_attempt',
+
+    await conn.commit();
+
+    const [[defendingClub]] = await pool.execute(
+      'SELECT manager_id FROM clubs WHERE id = ?', [player.club_id]
+    );
+    if (defendingClub?.manager_id && req.sendNotification) {
+      req.sendNotification(
+        defendingClub.manager_id,
+        'poach_attempt',
         `Someone is trying to poach ${player.name}! You have 48 hours to respond.`,
-        { player_id, bid_id: bidResult.rows[0].id, offered_wage, bid_amount }
+        { player_id, bid_id: result.insertId, offered_wage, bid_amount }
       );
     }
-    res.json({ success: true, bid: bidResult.rows[0] });
+
+    res.json({ success: true, bid_id: result.insertId });
   } catch (err) {
-    await client.query('ROLLBACK');
+    await conn.rollback();
     res.status(500).json({ error: err.message });
-  } finally { client.release(); }
+  } finally {
+    conn.release();
+  }
 });
 
+// USE LOYALTY TOKEN
 router.post('/loyalty-token/:bid_id', async (req, res) => {
   try {
-    await req.pool.query('UPDATE transfer_bids SET loyalty_token_used = true WHERE id = $1', [req.params.bid_id]);
+    await req.pool.execute(
+      'UPDATE transfer_bids SET loyalty_token_used = true WHERE id = ?', [req.params.bid_id]
+    );
     res.json({ success: true, message: 'Loyalty token used - player much more likely to stay' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// RESOLVE BID
+router.post('/resolve/:bid_id', async (req, res) => {
+  const pool = req.pool;
+  try {
+    const [[bid]] = await pool.execute('SELECT * FROM transfer_bids WHERE id = ?', [req.params.bid_id]);
+    if (!bid) return res.status(404).json({ error: 'Bid not found' });
+
+    const [[player]] = await pool.execute('SELECT * FROM players WHERE id = ?', [bid.player_id]);
+    const [[contract]] = await pool.execute('SELECT * FROM contracts WHERE player_id = ? AND active = true', [bid.player_id]);
+    const [[currentClub]] = await pool.execute('SELECT * FROM clubs WHERE id = ?', [bid.to_club_id]);
+    const [[biddingClub]] = await pool.execute('SELECT * FROM clubs WHERE id = ?', [bid.from_club_id]);
+
+    const result = calculatePlayerDecision(player, contract, currentClub, biddingClub, bid);
+
+    if (result.decision === 'leave') {
+      await pool.execute('UPDATE contracts SET active = false WHERE player_id = ? AND active = true', [bid.player_id]);
+      await pool.execute('UPDATE players SET club_id = ? WHERE id = ?', [bid.from_club_id, bid.player_id]);
+      const [[clock]] = await pool.execute('SELECT * FROM game_clock LIMIT 1');
+      await pool.execute(
+        `INSERT INTO contracts 
+          (player_id, club_id, weekly_wage, start_week, start_season, duration_weeks, 
+           expires_at_week, expires_at_season, no_poach_until_week)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [bid.player_id, bid.from_club_id, bid.offered_wage,
+         clock.current_week, clock.current_season,
+         bid.offered_years * 38,
+         clock.current_week + bid.offered_years * 38,
+         clock.current_season + bid.offered_years,
+         clock.current_week + 8]
+      );
+      await pool.execute(
+        "UPDATE transfer_bids SET status = 'completed', player_decision = 'leave' WHERE id = ?",
+        [bid.id]
+      );
+    } else {
+      await pool.execute(
+        "UPDATE transfer_bids SET status = 'completed', player_decision = 'stay' WHERE id = ?",
+        [bid.id]
+      );
+    }
+
+    res.json({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// TRANSFER MARKET
 router.get('/market', async (req, res) => {
   const { position, league, search } = req.query;
   try {
-    let query = `SELECT p.*, c.weekly_wage, c.expires_at_week, cl.name as club_name, cl.league
-      FROM players p JOIN contracts c ON p.id = c.player_id AND c.active = true
-      JOIN clubs cl ON p.club_id = cl.id WHERE 1=1`;
+    let query = `
+      SELECT p.*, c.weekly_wage, c.expires_at_week, cl.name as club_name, cl.league
+      FROM players p
+      JOIN contracts c ON p.id = c.player_id AND c.active = true
+      JOIN clubs cl ON p.club_id = cl.id
+      WHERE 1=1
+    `;
     const params = [];
-    if (position) { params.push(position); query += ` AND p.position = $${params.length}`; }
-    if (league) { params.push(league); query += ` AND cl.league = $${params.length}`; }
-    if (search) { params.push(`%${search}%`); query += ` AND p.name ILIKE $${params.length}`; }
+    if (position) { params.push(position); query += ` AND p.position = ?`; }
+    if (league) { params.push(league); query += ` AND cl.league = ?`; }
+    if (search) { params.push(`%${search}%`); query += ` AND p.name LIKE ?`; }
     query += ' ORDER BY p.overall_rating DESC LIMIT 100';
-    const result = await req.pool.query(query, params);
-    res.json(result.rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const [rows] = await req.pool.execute(query, params);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
