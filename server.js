@@ -382,14 +382,15 @@ app.post("/api/squad/promote/:id", async (req, res) => {
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// CSV headers debug
 app.get('/api/csv-headers', (req, res) => {
-  const fs = require('fs');
   const text = fs.readFileSync(path.join(__dirname, 'players_data_light-2025_2026.csv'), 'utf8');
   const headers = text.split('\n')[0];
   res.json({ headers });
 });
+
 // Seed players from CSV
-const fs = require('fs');
 
 app.get('/api/seed-players', async (req, res) => {
   try {
