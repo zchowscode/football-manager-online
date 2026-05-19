@@ -382,6 +382,32 @@ app.post("/api/squad/promote/:id", async (req, res) => {
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+// Seed players from CSV
+const fs = require('fs');
+
+app.get('/api/seed-players', async (req, res) => {
+  try {
+    const csvPath = path.join(__dirname, 'data', 'players_data_light-2025_2026.csv');
+    const text = fs.readFileSync(csvPath, 'utf8');
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+
+    let inserted = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',');
+      const get = (name) => cols[headers.indexOf(name)]?.replace(/"/g, '').trim() || null;
+
+      const name = get('player');
+      const position = get('position');
+      const age = parseInt(get('age')) || 22;
+      const nationality = get('nationality');
+      const overall = Math.min(99, Math.max(40, parseInt(get('overall_rating') || get('rating') || get('ova')) || 70));
+
+      if (!name) continue;
+
+      await pool.execute(
+        `INSERT IGNORE INTO players (name, position, overall_rating, potential, age, nationality, pace, shooting, passing, dribbling, defending, physical, reputation, happin
 // Serve login page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
