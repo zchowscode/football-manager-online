@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FM Online — Sign In</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--green:#238636;--blue:#1f6feb;--accent:#388bfd;--red:#da3633}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.logo{text-align:center;margin-bottom:32px}
+.logo-icon{font-size:48px;margin-bottom:8px}
+.logo-title{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.logo-sub{font-size:13px;color:var(--muted);margin-top:4px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:100%;max-width:420px}
+.tabs{display:flex;margin-bottom:24px;background:var(--bg3);border-radius:8px;padding:4px}
+.tab{flex:1;padding:8px;text-align:center;cursor:pointer;border-radius:6px;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.form-group{margin-bottom:16px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500}
+input,select{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:border-color .15s;font-family:inherit}
+input:focus,select:focus{border-color:var(--accent)}
+input::placeholder{color:var(--muted)}
+select option{background:var(--bg3)}
+.btn{width:100%;padding:11px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .15s;margin-top:8px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--accent)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.error{background:rgba(218,54,51,.1);border:1px solid rgba(218,54,51,.3);color:#f85149;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.error.visible{display:block}
+.success{background:rgba(35,134,54,.1);border:1px solid rgba(35,134,54,.3);color:#3fb950;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.success.visible{display:block}
+.step{display:none}
+.step.active{display:block}
+.step-indicator{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s}
+.step-dot.active{background:var(--accent)}
+.step-dot.done{background:var(--green)}
+.club-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:320px;overflow-y:auto;margin-bottom:16px}
+.club-card{padding:12px;background:var(--bg3);border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;text-align:center}
+.club-card:hover{border-color:var(--accent)}
+.club-card.selected{border-color:var(--accent);background:rgba(56,139,253,.08)}
+.club-card.taken{opacity:.4;cursor:not-allowed;pointer-events:none}
+.club-name{font-size:12px;font-weight:600;margin-bottom:2px}
+.club-league{font-size:10px;color:var(--muted)}
+.club-taken{font-size:10px;color:var(--red);margin-top:2px}
+.club-badge{font-size:24px;margin-bottom:6px}
+.server-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.server-item{padding:14px;background:var(--bg3);border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;display:flex;justify-content:space-between;align-items:center}
+.server-item:hover{border-color:var(--accent)}
+.server-item.selected{border-color:var(--accent);background:rgba(56,139,253,.08)}
+.server-name{font-size:14px;font-weight:600}
+.server-info{font-size:11px;color:var(--muted);margin-top:2px}
+.server-slots{font-size:12px;color:var(--green);font-weight:500}
+.loading{text-align:center;color:var(--muted);font-size:13px;padding:20px}
+</style>
+</head>
+<body>
+
+<div class="logo">
+  <div class="logo-icon">⚽</div>
+  <div class="logo-title">FM Online</div>
+  <div class="logo-sub">Multiplayer Football Manager</div>
+</div>
+
+<div class="card">
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('login')">Sign In</div>
+    <div class="tab" onclick="showTab('register')">Create Account</div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login-form">
+    <div class="error" id="login-error"></div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-username" placeholder="Your username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()" id="login-btn">Sign In</button>
+  </div>
+
+  <!-- REGISTER - MULTI STEP -->
+  <div id="register-form" style="display:none">
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-dot" id="dot-3"></div>
+    </div>
+
+    <div class="error" id="register-error"></div>
+    <div class="success" id="register-success"></div>
+
+    <!-- STEP 1: Account details -->
+    <div class="step active" id="step-1">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="reg-username" placeholder="Choose a username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="At least 6 characters">
+      </div>
+      <button class="btn btn-primary" onclick="goStep2()">Continue →</button>
+    </div>
+
+    <!-- STEP 2: Pick server -->
+    <div class="step" id="step-2">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Choose a server to join</div>
+      <div class="server-list" id="server-list">
+        <div class="loading">Loading servers...</div>
+      </div>
+      <button class="btn btn-primary" onclick="goStep3()" id="step2-btn" disabled>Continue →</button>
+    </div>
+
+    <!-- STEP 3: Pick club -->
+    <div class="step" id="step-3">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Choose your club</div>
+      <div class="club-grid" id="club-grid">
+        <div class="loading">Loading clubs...</div>
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()" id="register-btn" disabled>Start Managing →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let selectedServer = null;
+let selectedClub = null;
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+  if (tab === 'register') loadServers();
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+function hideError(id) { document.getElementById(id).classList.remove('visible'); }
+
+async function doLogin() {
+  hideError('login-error');
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!username || !password) return showError('login-error', 'Please fill in all fields');
+  document.getElementById('login-btn').disabled = true;
+  document.getElementById('login-btn').textContent = 'Signing in...';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('fm_token', data.token);
+      localStorage.setItem('fm_manager', JSON.stringify(data.manager));
+      window.location.href = '/game';
+    } else {
+      showError('login-error', data.error || 'Login failed');
+      document.getElementById('login-btn').disabled = false;
+      document.getElementById('login-btn').textContent = 'Sign In';
+    }
+  } catch (err) {
+    showError('login-error', 'Server error - try again');
+    document.getElementById('login-btn').disabled = false;
+    document.getElementById('login-btn').textContent = 'Sign In';
+  }
+}
+
+function goStep2() {
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  if (!username || username.length < 3) return showError('register-error', 'Username must be at least 3 characters');
+  if (!password || password.length < 6) return showError('register-error', 'Password must be at least 6 characters');
+  hideError('register-error');
+  document.getElementById('step-1').classList.remove('active');
+  document.getElementById('step-2').classList.add('active');
+  document.getElementById('dot-1').classList.remove('active');
+  document.getElementById('dot-1').classList.add('done');
+  document.getElementById('dot-2').classList.add('active');
+  loadServers();
+}
+
+async function loadServers() {
+  try {
+    const res = await fetch('/api/auth/servers');
+    const servers = await res.json();
+    const list = document.getElementById('server-list');
+    if (!servers.length) {
+      list.innerHTML = '<div class="loading">No servers available yet</div>';
+      return;
+    }
+    list.innerHTML = servers.map(s => `
+      <div class="server-item" onclick="selectServer(${s.id}, this)">
+        <div>
+          <div class="server-name">${s.name}</div>
+          <div class="server-info">${s.league} · Season 1</div>
+        </div>
+        <div class="server-slots">${s.max_managers - s.human_managers} spots left</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    document.getElementById('server-list').innerHTML = '<div class="loading">Error loading servers</div>';
+  }
+}
+
+function selectServer(id, el) {
+  document.querySelectorAll('.server-item').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedServer = id;
+  document.getElementById('step2-btn').disabled = false;
+}
+
+async function goStep3() {
+  if (!selectedServer) return;
+  document.getElementById('step-2').classList.remove('active');
+  document.getElementById('step-3').classList.add('active');
+  document.getElementById('dot-2').classList.remove('active');
+  document.getElementById('dot-2').classList.add('done');
+  document.getElementById('dot-3').classList.add('active');
+  try {
+    const res = await fetch(`/api/auth/clubs/${selectedServer}`);
+    const clubs = await res.json();
+    const grid = document.getElementById('club-grid');
+    const badges = {'Manchester City':'🔵','Arsenal':'🔴','Liverpool':'🔴','Chelsea':'🔵','Tottenham':'⚪','Real Madrid':'⚪','Barcelona':'🔵','Bayern Munich':'🔴','PSG':'🔵','Juventus':'⚫'};
+    grid.innerHTML = clubs.map(c => `
+      <div class="club-card ${c.taken ? 'taken' : ''}" onclick="selectClub(${c.id}, this)">
+        <div class="club-badge">${badges[c.name] || '⚽'}</div>
+        <div class="club-name">${c.name}</div>
+        <div class="club-league">${c.league}</div>
+        ${c.taken ? `<div class="club-taken">Taken by ${c.manager_name}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (err) {
+    document.getElementById('club-grid').innerHTML = '<div class="loading">Error loading clubs</div>';
+  }
+}
+
+function selectClub(id, el) {
+  if (el.classList.contains('taken')) return;
+  document.querySelectorAll('.club-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedClub = id;
+  document.getElementById('register-btn').disabled = false;
+}
+
+async function doRegister() {
+  if (!selectedClub || !selectedServer) return;
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  document.getElementById('register-btn').disabled = true;
+  document.getElementById('register-btn').textContent = 'Creating account...';
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, club_id: selectedClub, server_id: selectedServer })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('fm_token', data.token);
+      localStorage.setItem('fm_manager', JSON.stringify(data.manager));
+      window.location.href = '/game';
+    } else {
+      showError('register-error', data.error || 'Registration failed');
+      document.getElementById('register-btn').disabled = false;
+      document.getElementById('register-btn').textContent = 'Start Managing →';
+    }
+  } catch (err) {
+    showError('register-error', 'Server error - try again');
+    document.getElementById('register-btn').disabled = false;
+    document.getElementById('register-btn').textContent = 'Start Managing →';
+  }
+}
+</script>
+</body>
+</html>
