@@ -7,6 +7,7 @@ const cron = require("node-cron");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const { simulateMatch } = require('./matchsim');
 
 const app = express();
 const server = http.createServer(app);
@@ -107,7 +108,6 @@ cron.schedule("0 0 */2 * *", async () => {
     );
     const [clockRows] = await pool.execute("SELECT * FROM game_clock LIMIT 1");
     const clock = clockRows[0];
-    global.currentWeek = clock.current_week;
     console.log(`Game week ${clock.current_week} season ${clock.current_season}`);
 
     await simulateMatchday(clock.current_week, clock.current_season);
@@ -145,75 +145,93 @@ async function simulateMatchday(week, season) {
       [week, season]
     );
 
+    console.log(`Simulating ${matches.length} matches for week ${week}`);
+
     for (const match of matches) {
-      const [[homeClub]] = await pool.execute(
-        "SELECT * FROM clubs WHERE id = ?",
+      const [[homeClub]] = await pool.execute("SELECT * FROM clubs WHERE id = ?", [match.home_club_id]);
+      const [[awayClub]] = await pool.execute("SELECT * FROM clubs WHERE id = ?", [match.away_club_id]);
+
+      // Get real squads
+      const [homeSquad] = await pool.execute(
+        `SELECT p.* FROM players p
+         JOIN contracts c ON p.id = c.player_id
+         WHERE c.club_id = ? AND c.active = 1`,
         [match.home_club_id]
       );
-      const [[awayClub]] = await pool.execute(
-        "SELECT * FROM clubs WHERE id = ?",
+      const [awaySquad] = await pool.execute(
+        `SELECT p.* FROM players p
+         JOIN contracts c ON p.id = c.player_id
+         WHERE c.club_id = ? AND c.active = 1`,
         [match.away_club_id]
       );
 
-      const homeLambda = Math.max(
-        0.3,
-        (homeClub.attack_strength / awayClub.defence_strength) * 1.3
-      );
-      const awayLambda = Math.max(
-        0.3,
-        awayClub.attack_strength / homeClub.defence_strength
-      );
+      // Get tactics with defaults fallback
+      const defaultTactics = {
+        pressing: 6, defensive_line: 5, tempo: 6,
+        width: 5, attacking_risk: 5, mentality: 'balanced'
+      };
+      const [homeTacticsRows] = await pool.execute("SELECT * FROM tactics WHERE club_id = ?", [match.home_club_id]);
+      const [awayTacticsRows] = await pool.execute("SELECT * FROM tactics WHERE club_id = ?", [match.away_club_id]);
+      const homeTactics = homeTacticsRows[0] || defaultTactics;
+      const awayTactics = awayTacticsRows[0] || defaultTactics;
 
-      const homeGoals = poissonRandom(homeLambda);
-      const awayGoals = poissonRandom(awayLambda);
+      // Run match engine
+      const result = simulateMatch(homeClub, awayClub, homeTactics, awayTactics, homeSquad, awaySquad);
 
+      const scorersSummary = [
+        ...result.homeScorers.map(s => `${s.name} ${s.minute}'`),
+        ...result.awayScorers.map(s => `${s.name} ${s.minute}'`)
+      ].join(', ');
+
+      // Save result
       await pool.execute(
-        "UPDATE fixtures SET home_goals = ?, away_goals = ?, played = true WHERE id = ?",
-        [homeGoals, awayGoals, match.id]
+        `UPDATE fixtures SET
+          home_goals = ?, away_goals = ?, played = true,
+          home_possession = ?, away_possession = ?,
+          home_shots = ?, away_shots = ?,
+          scorers = ?
+         WHERE id = ?`,
+        [
+          result.homeGoals, result.awayGoals,
+          result.homePossession, result.awayPossession,
+          result.homeShots, result.awayShots,
+          scorersSummary,
+          match.id
+        ]
       );
 
-      await updateLeagueTable(match, homeGoals, awayGoals);
+      await updateLeagueTable(match, result.homeGoals, result.awayGoals);
 
-      const result = `${homeClub.name} ${homeGoals} - ${awayGoals} ${awayClub.name}`;
+      const resultStr = `${homeClub.name} ${result.homeGoals} - ${result.awayGoals} ${awayClub.name}`;
+      console.log(`Result: ${resultStr} | Scorers: ${scorersSummary}`);
 
       if (homeClub.manager_id) {
-        await sendNotification(
-          homeClub.manager_id,
-          "match_result",
-          `Result: ${result}`,
-          { home_goals: homeGoals, away_goals: awayGoals }
-        );
+        await sendNotification(homeClub.manager_id, 'match_result', `Result: ${resultStr}`, {
+          home_goals: result.homeGoals, away_goals: result.awayGoals,
+          scorers: result.homeScorers
+        });
       }
       if (awayClub.manager_id) {
-        await sendNotification(
-          awayClub.manager_id,
-          "match_result",
-          `Result: ${result}`,
-          { home_goals: homeGoals, away_goals: awayGoals }
-        );
+        await sendNotification(awayClub.manager_id, 'match_result', `Result: ${resultStr}`, {
+          home_goals: result.homeGoals, away_goals: result.awayGoals,
+          scorers: result.awayScorers
+        });
       }
 
-      io.to(`server:${match.server_id}`).emit("match:result", {
+      io.to(`server:${match.server_id}`).emit('match:result', {
         fixture_id: match.id,
-        result,
-        home_goals: homeGoals,
-        away_goals: awayGoals,
+        result: resultStr,
+        home_goals: result.homeGoals,
+        away_goals: result.awayGoals,
+        home_possession: result.homePossession,
+        home_shots: result.homeShots,
+        away_shots: result.awayShots,
+        scorers: scorersSummary
       });
     }
   } catch (err) {
-    console.error("Match sim error:", err.message);
+    console.error('Match sim error:', err.message);
   }
-}
-
-function poissonRandom(lambda) {
-  let L = Math.exp(-lambda),
-    k = 0,
-    p = 1;
-  do {
-    k++;
-    p *= Math.random();
-  } while (p > L);
-  return Math.min(k - 1, 8);
 }
 
 async function updateLeagueTable(match, homeGoals, awayGoals) {
@@ -273,6 +291,19 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Football Manager server running" });
 });
 
+// Manual week advance for testing
+app.get("/api/admin/advance-week", async (req, res) => {
+  try {
+    await pool.execute("UPDATE game_clock SET current_week = current_week + 1, last_tick = NOW()");
+    const [clockRows] = await pool.execute("SELECT * FROM game_clock LIMIT 1");
+    const clock = clockRows[0];
+    await simulateMatchday(clock.current_week, clock.current_season);
+    res.json({ success: true, week: clock.current_week, season: clock.current_season });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Game clock
 app.get("/api/clock", async (req, res) => {
   try {
@@ -316,12 +347,31 @@ app.get("/api/squad/:clubId", async (req, res) => {
   }
 });
 
-// Fixtures
+// Fixtures for a server
 app.get("/api/fixtures/:serverId", async (req, res) => {
   try {
     const [rows] = await pool.execute(
       "SELECT * FROM fixtures WHERE server_id = ? ORDER BY week ASC",
       [req.params.serverId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Fixtures for a specific club
+app.get("/api/fixtures/club/:clubId", async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT f.*,
+        hc.name as home_club_name, ac.name as away_club_name
+       FROM fixtures f
+       JOIN clubs hc ON hc.id = f.home_club_id
+       JOIN clubs ac ON ac.id = f.away_club_id
+       WHERE f.home_club_id = ? OR f.away_club_id = ?
+       ORDER BY f.week ASC`,
+      [req.params.clubId, req.params.clubId]
     );
     res.json(rows);
   } catch (err) {
@@ -366,7 +416,7 @@ app.post("/api/notifications/:managerId/read-all", async (req, res) => {
   }
 });
 
-// Transfer market - all players with club info
+// Transfer market
 app.get("/api/transfers/market", async (req, res) => {
   try {
     const [rows] = await pool.execute(
@@ -382,27 +432,18 @@ app.get("/api/transfers/market", async (req, res) => {
   }
 });
 
-// Submit transfer bid - directly signs player to your club
+// Submit transfer bid
 app.post("/api/transfers/bid", async (req, res) => {
   const { player_id, from_club_id, offered_wage, offered_years, bid_amount } = req.body;
   if (!player_id || !from_club_id || !offered_wage || !offered_years) {
     return res.status(400).json({ error: "Missing required fields" });
   }
   try {
-    // Check player exists
-    const [players] = await pool.execute(
-      "SELECT * FROM players WHERE id = ?",
-      [player_id]
-    );
+    const [players] = await pool.execute("SELECT * FROM players WHERE id = ?", [player_id]);
     if (!players.length) return res.status(404).json({ error: "Player not found" });
 
-    // Deactivate any existing contract
-    await pool.execute(
-      "UPDATE contracts SET active = 0 WHERE player_id = ?",
-      [player_id]
-    );
+    await pool.execute("UPDATE contracts SET active = 0 WHERE player_id = ?", [player_id]);
 
-    // Create new contract with the signing club
     const durationWeeks = offered_years * 38;
     await pool.execute(
       `INSERT INTO contracts (player_id, club_id, weekly_wage, expires_at_week, active, team_type)
@@ -437,10 +478,7 @@ app.get("/api/press/:serverId", async (req, res) => {
 app.post("/api/press", async (req, res) => {
   const { server_id, club_id, template_text, custom_text } = req.body;
   try {
-    const [mgr] = await pool.execute(
-      "SELECT id FROM managers WHERE club_id = ?",
-      [club_id]
-    );
+    const [mgr] = await pool.execute("SELECT id FROM managers WHERE club_id = ?", [club_id]);
     if (!mgr.length) return res.status(400).json({ error: "Manager not found" });
     await pool.execute(
       "INSERT INTO press_conferences (manager_id, server_id, club_id, template_text, custom_text) VALUES (?, ?, ?, ?, ?)",
@@ -483,23 +521,72 @@ app.post("/api/squad/promote/:id", async (req, res) => {
   }
 });
 
+// Generate fixtures for a season
+app.get("/api/admin/generate-fixtures", async (req, res) => {
+  try {
+    const serverId = req.query.server_id || 1;
+    const season = req.query.season || 1;
+
+    // Clear existing unplayed fixtures
+    await pool.execute(
+      "DELETE FROM fixtures WHERE server_id = ? AND season = ? AND played = false",
+      [serverId, season]
+    );
+
+    const [clubs] = await pool.execute("SELECT id FROM clubs ORDER BY id ASC");
+    const clubIds = clubs.map(c => c.id);
+    const n = clubIds.length;
+    const fixtures = [];
+
+    // Round-robin algorithm
+    const ids = [...clubIds];
+    if (ids.length % 2 !== 0) ids.push(null); // bye
+    const rounds = ids.length - 1;
+    const half = ids.length / 2;
+
+    for (let round = 0; round < rounds; round++) {
+      for (let i = 0; i < half; i++) {
+        const home = ids[i];
+        const away = ids[ids.length - 1 - i];
+        if (home && away) {
+          fixtures.push([home, away, round + 1, season, serverId]);
+        }
+      }
+      // Rotate all except first
+      ids.splice(1, 0, ids.pop());
+    }
+
+    // Return fixtures (second half of season)
+    const returnFixtures = fixtures.map(([h, a, w, s, sid]) => [a, h, w + rounds, s, sid]);
+    const allFixtures = [...fixtures, ...returnFixtures];
+
+    // Bulk insert
+    const values = allFixtures.map(f => `(${f[0]}, ${f[1]}, ${f[2]}, ${f[3]}, ${f[4]}, false)`).join(',');
+    await pool.execute(
+      `INSERT INTO fixtures (home_club_id, away_club_id, week, season, server_id, played) VALUES ${values}`
+    );
+
+    res.json({ success: true, fixtures_generated: allFixtures.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // CSV headers debug
 app.get("/api/csv-headers", (req, res) => {
   const text = fs.readFileSync(
-    path.join(__dirname, "players_data_light-2025_2026.csv"),
-    "utf8"
+    path.join(__dirname, "players_data_light-2025_2026.csv"), "utf8"
   );
-  const headers = text.split("\n")[0];
-  res.json({ headers });
+  res.json({ headers: text.split("\n")[0] });
 });
 
-// Seed contracts - fast bulk version
+// Seed contracts
 app.get("/api/seed-contracts", async (req, res) => {
   try {
     const csvPath = path.join(__dirname, "players_data_light-2025_2026.csv");
     const text = fs.readFileSync(csvPath, "utf8");
     const lines = text.trim().split("\n");
-    const headers = lines[0].split(",").map((h) => h.replace(/"/g, "").trim());
+    const headers = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
 
     const clubMap = {
       "Manchester City": 1, Arsenal: 2, Liverpool: 3, Chelsea: 4,
@@ -516,8 +603,7 @@ app.get("/api/seed-contracts", async (req, res) => {
     const values = [];
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(",");
-      const get = (name) =>
-        cols[headers.indexOf(name)]?.replace(/"/g, "").trim() || null;
+      const get = (name) => cols[headers.indexOf(name)]?.replace(/"/g, "").trim() || null;
       const playerName = get("Player");
       const squad = get("Squad");
       if (!playerName || !squad || !clubMap[squad] || !playerMap[playerName]) continue;
@@ -536,21 +622,18 @@ app.get("/api/seed-contracts", async (req, res) => {
   }
 });
 
-// Seed players from CSV
+// Seed players
 app.get("/api/seed-players", async (req, res) => {
   try {
     const csvPath = path.join(__dirname, "players_data_light-2025_2026.csv");
     const text = fs.readFileSync(csvPath, "utf8");
     const lines = text.trim().split("\n");
-    const headers = lines[0].split(",").map((h) => h.replace(/"/g, "").trim());
+    const headers = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
 
     let inserted = 0;
-
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(",");
-      const get = (name) =>
-        cols[headers.indexOf(name)]?.replace(/"/g, "").trim() || null;
-
+      const get = (name) => cols[headers.indexOf(name)]?.replace(/"/g, "").trim() || null;
       const name = get("Player");
       const position = get("Pos");
       const age = parseInt(get("Age")) || 22;
@@ -558,17 +641,11 @@ app.get("/api/seed-players", async (req, res) => {
       const goals = parseInt(get("Gls")) || 0;
       const assists = parseInt(get("Ast")) || 0;
       const overall = Math.min(90, Math.max(50, 60 + goals + assists));
-
       if (!name || name === "Player") continue;
 
       await pool.execute(
         "INSERT IGNORE INTO players (name, position, overall_rating, potential, age, nationality, pace, shooting, passing, dribbling, defending, physical, reputation, happiness) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-          name, position, overall,
-          overall + Math.floor(Math.random() * 5),
-          age, nationality,
-          65, 65, 65, 65, 65, 65, 70, 80,
-        ]
+        [name, position, overall, overall + Math.floor(Math.random() * 5), age, nationality, 65, 65, 65, 65, 65, 65, 70, 80]
       );
       inserted++;
     }
@@ -579,15 +656,9 @@ app.get("/api/seed-players", async (req, res) => {
   }
 });
 
-// Serve login page
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
-
-// Serve game page
-app.get("/game", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "game.html"));
-});
+// Serve pages
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/game", (req, res) => res.sendFile(path.join(__dirname, "public", "game.html")));
 
 // ============================================================
 // START
