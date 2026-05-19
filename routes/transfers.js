@@ -28,13 +28,6 @@ router.post('/bid', async (req, res) => {
       });
     }
 
-    const [existingBid] = await conn.execute(
-      "SELECT id FROM transfer_bids WHERE player_id = ? AND status = 'pending'", [player_id]
-    );
-    if (existingBid.length) {
-      await conn.rollback();
-      return res.status(400).json({ error: 'Player already has a pending bid' });
-    }
 
     const [[contract]] = await conn.execute(
       'SELECT * FROM contracts WHERE player_id = ? AND active = true', [player_id]
