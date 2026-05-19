@@ -128,22 +128,20 @@ router.get('/market', async (req, res) => {
   const { position, league, search } = req.query;
   try {
     let query = `
-      SELECT p.*, c.weekly_wage, c.expires_at_week, cl.name as club_name, cl.league
+      SELECT p.*, cl.name AS club_name, cl.league
       FROM players p
-      JOIN contracts c ON p.id = c.player_id AND c.active = true
-      JOIN clubs cl ON p.club_id = cl.id
+      LEFT JOIN contracts c ON c.player_id = p.id AND c.active = 1
+      LEFT JOIN clubs cl ON cl.id = c.club_id
       WHERE 1=1
     `;
     const params = [];
     if (position) { params.push(position); query += ` AND p.position = ?`; }
-    if (league) { params.push(league); query += ` AND cl.league = ?`; }
+    if (league) { params.push(`%${league}%`); query += ` AND cl.league LIKE ?`; }
     if (search) { params.push(`%${search}%`); query += ` AND p.name LIKE ?`; }
-    query += ' ORDER BY p.overall_rating DESC LIMIT 100';
+    query += ' ORDER BY p.overall_rating DESC LIMIT 500';
     const [rows] = await req.pool.execute(query, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
-module.exports = router;
