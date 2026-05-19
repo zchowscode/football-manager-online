@@ -281,10 +281,8 @@ async function endSeason(season) {
 // ROUTES
 // ============================================================
 const { router: authRouter } = require("./routes/auth");
-const transferRouter = require("./routes/transfers");
 
 app.use("/api/auth", authRouter);
-app.use("/api/transfers", transferRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {
