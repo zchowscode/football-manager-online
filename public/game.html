@@ -757,6 +757,9 @@ document.getElementById('bid-modal').addEventListener('click', function(e) {
 async function loadTransfers() {
   try {
     allPlayers = await api('/api/transfers/market');
+    document.getElementById('filter-pos').value = '';
+    document.getElementById('filter-league').value = '';
+    document.getElementById('search-name').value = '';
     renderPlayers(allPlayers);
   } catch(e) {
     document.getElementById('transfer-body').innerHTML =
