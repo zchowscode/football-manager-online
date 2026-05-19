@@ -308,7 +308,80 @@ app.post("/api/notifications/:id/read", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// Mark all notifications read
+app.post("/api/notifications/:managerId/read-all", async (req, res) => {
+  try {
+    await pool.execute("UPDATE notifications SET `read` = true WHERE manager_id = ?", [req.params.managerId]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
+// Transfer market
+app.get("/api/transfers/market", async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT p.*, cl.name AS club_name, cl.league
+       FROM players p
+       LEFT JOIN contracts c ON c.player_id = p.id AND c.active = 1
+       LEFT JOIN clubs cl ON cl.id = c.club_id
+       ORDER BY p.overall_rating DESC LIMIT 500`
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Press room
+app.get("/api/press/:serverId", async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT pc.*, m.username, cl.name AS club_name
+       FROM press_conferences pc
+       JOIN managers m ON m.id = pc.manager_id
+       JOIN clubs cl ON cl.id = pc.club_id
+       WHERE pc.server_id = ?
+       ORDER BY pc.created_at DESC LIMIT 30`,
+      [req.params.serverId]
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/press", async (req, res) => {
+  const { server_id, club_id, template_text, custom_text } = req.body;
+  try {
+    const [mgr] = await pool.execute("SELECT id FROM managers WHERE club_id = ?", [club_id]);
+    if (!mgr.length) return res.status(400).json({ error: "Manager not found" });
+    await pool.execute(
+      "INSERT INTO press_conferences (manager_id, server_id, club_id, template_text, custom_text) VALUES (?, ?, ?, ?, ?)",
+      [mgr[0].id, server_id, club_id, template_text, custom_text || null]
+    );
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Tactics
+app.post("/api/tactics", async (req, res) => {
+  const { club_id, formation, pressing, defensive_line, tempo, width, attacking_risk, mentality } = req.body;
+  try {
+    await pool.execute(
+      `INSERT INTO tactics (club_id, formation, pressing, defensive_line, tempo, width, attacking_risk, mentality)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         formation=VALUES(formation), pressing=VALUES(pressing), defensive_line=VALUES(defensive_line),
+         tempo=VALUES(tempo), width=VALUES(width), attacking_risk=VALUES(attacking_risk), mentality=VALUES(mentality)`,
+      [club_id, formation, pressing, defensive_line, tempo, width, attacking_risk, mentality]
+    );
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Promote youth player
+app.post("/api/squad/promote/:id", async (req, res) => {
+  try {
+    await pool.execute("UPDATE contracts SET team_type = 'first' WHERE player_id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 // Serve login page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
