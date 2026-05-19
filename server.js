@@ -391,6 +391,49 @@ app.get('/api/csv-headers', (req, res) => {
   res.json({ headers });
 });
 
+
+// Seed contracts - assign players to clubs based on Squad column
+app.get('/api/seed-contracts', async (req, res) => {
+  try {
+    const csvPath = path.join(__dirname, 'players_data_light-2025_2026.csv');
+    const text = fs.readFileSync(csvPath, 'utf8');
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+
+    const clubMap = {
+      'Manchester City': 1, 'Arsenal': 2, 'Liverpool': 3, 'Chelsea': 4,
+      'Manchester Utd': 5, 'Tottenham': 6, 'Newcastle Utd': 7, 'Aston Villa': 8,
+      'West Ham': 9, 'Brighton': 10, 'Brentford': 11, 'Fulham': 12,
+      'Crystal Palace': 13, 'Wolves': 14, 'Everton': 15, 'Leicester City': 16,
+      'Nott\'ham Forest': 17, 'Bournemouth': 18, 'Southampton': 19, 'Ipswich Town': 20
+    };
+
+    let assigned = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',');
+      const get = (name) => cols[headers.indexOf(name)]?.replace(/"/g, '').trim() || null;
+
+      const playerName = get('Player');
+      const squad = get('Squad');
+      if (!playerName || !squad || !clubMap[squad]) continue;
+
+      const clubId = clubMap[squad];
+      const [players] = await pool.execute("SELECT id FROM players WHERE name = ? LIMIT 1", [playerName]);
+      if (!players.length) continue;
+
+      await pool.execute(
+        "INSERT IGNORE INTO contracts (player_id, club_id, weekly_wage, expires_at_week, active, team_type) VALUES (?, ?, ?, ?, 1, 'first')",
+        [players[0].id, clubId, 10000, 100]
+      );
+      assigned++;
+    }
+
+    res.json({ success: true, assigned });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // Seed players from CSV
 
 app.get('/api/seed-players', async (req, res) => {
