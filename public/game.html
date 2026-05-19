@@ -817,8 +817,9 @@ async function submitBid() {
 
   if (!wage || !years) { msg.textContent = 'Please fill wage and contract length.'; msg.style.color = 'var(--red)'; return; }
   if (!manager.club_id) { msg.textContent = 'No club found — try logging out and back in.'; msg.style.color = 'var(--red)'; return; }
+  if (!fee) { msg.textContent = 'You must submit a transfer fee.'; msg.style.color = 'var(--red)'; return; }
 
-  msg.textContent = 'Signing player...'; msg.style.color = 'var(--muted)';
+  msg.textContent = 'Submitting bid...'; msg.style.color = 'var(--muted)';
 
   try {
     const r = await api('/api/transfers/bid', {
@@ -832,12 +833,12 @@ async function submitBid() {
       })
     });
     if (r.success) {
-      msg.textContent = '✓ ' + r.message;
-      msg.style.color = 'var(--green)';
-      showToast(`✓ ${currentBidPlayer.name} signed!`);
-      setTimeout(() => { closeBid(); loadTransfers(); loadSquad(); }, 1500);
+      msg.textContent = '⏳ Bid submitted! The player will decide within 48 hours. Check your inbox for updates.';
+      msg.style.color = 'var(--accent)';
+      showToast(`Bid submitted for ${currentBidPlayer.name}!`, 'var(--blue)');
+      setTimeout(() => { closeBid(); loadTransfers(); }, 2000);
     } else {
-      msg.textContent = r.error || 'Signing failed.';
+      msg.textContent = r.error || 'Bid failed.';
       msg.style.color = 'var(--red)';
     }
   } catch(e) {
