@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FM Online</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#388bfd;
+  --green:#2ea043;--red:#f85149;--gold:#d4a843;--blue:#1f6feb;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.app{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;overflow-y:auto}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.logo h1{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+.logo-badge{background:var(--blue);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;letter-spacing:.04em}
+.clock-pill{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--muted)}
+.club-info-bar{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.club-badge{width:36px;height:36px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.club-details{min-width:0}
+.club-details strong{font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.club-details span{font-size:11px;color:var(--muted)}
+.nav-section-label{font-size:10px;color:var(--muted);padding:12px 16px 4px;letter-spacing:.08em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:var(--muted);font-size:13px;border-left:3px solid transparent;transition:all .15s;position:relative;user-select:none}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--text);border-left-color:var(--accent);background:rgba(56,139,253,.08)}
+.nav-item i{font-size:17px;width:20px;flex-shrink:0}
+.nav-badge{background:var(--red);color:#fff;font-size:10px;border-radius:10px;padding:1px 6px;margin-left:auto;font-weight:600}
+.nav-spacer{flex:1}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border)}
+.logout-btn{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--muted);font-size:13px;padding:6px 0;transition:color .15s}
+.logout-btn:hover{color:var(--red)}
+
+/* MAIN */
+.main{margin-left:230px;flex:1;padding:24px;max-width:1100px}
+.page{display:none}.page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:20px;font-weight:600}
+
+/* CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.stat-label{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.stat-val{font-size:26px;font-weight:600;line-height:1}
+.stat-val.gold{color:var(--gold)}
+.stat-val.green{color:var(--green)}
+.stat-val.blue{color:var(--accent)}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-body{padding:16px}
+
+/* TABLES */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;color:var(--muted);font-size:11px;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid rgba(48,54,61,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.you-row td{background:rgba(56,139,253,.05)}
+.you-row:hover td{background:rgba(56,139,253,.08)}
+
+/* PLAYERS */
+.player-row{display:flex;align-items:center;gap:9px}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--muted);flex-shrink:0}
+.ovr-badge{width:32px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.ovr-gold{background:rgba(212,168,67,.2);color:var(--gold)}
+.ovr-green{background:rgba(46,160,67,.2);color:var(--green)}
+.ovr-blue{background:rgba(56,139,253,.2);color:var(--accent)}
+.ovr-gray{background:var(--bg3);color:var(--muted)}
+.pos-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--muted);border:1px solid var(--border);white-space:nowrap}
+
+/* BUTTONS */
+.btn{padding:7px 13px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--accent)}
+.btn-success{background:rgba(46,160,67,.15);color:var(--green);border:1px solid rgba(46,160,67,.3)}.btn-success:hover{background:rgba(46,160,67,.25)}
+.btn-danger{background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.3)}.btn-danger:hover{background:rgba(248,81,73,.2)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text)}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+/* BADGES */
+.badge{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:500;white-space:nowrap}
+.badge-green{background:rgba(46,160,67,.15);color:var(--green)}
+.badge-blue{background:rgba(56,139,253,.15);color:var(--accent)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-gold{background:rgba(212,168,67,.15);color:var(--gold)}
+.badge-gray{background:var(--bg3);color:var(--muted)}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 16px;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+
+/* NEXT MATCH CARD */
+.next-match{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;text-align:center}
+.next-match-label{font-size:11px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
+.fixture-teams{display:flex;align-items:center;justify-content:center;gap:20px;font-size:16px;font-weight:600}
+.fixture-vs{font-size:14px;color:var(--muted);font-weight:400}
+.fixture-meta{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* RESULTS */
+.result-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(48,54,61,.4);font-size:13px}
+.result-row:last-child{border-bottom:none}
+.score-box{font-weight:700;font-size:15px;padding:2px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
+.result-outcome{font-size:11px;font-weight:600;width:18px;text-align:center}
+.w{color:var(--green)}.l{color:var(--red)}.d{color:var(--muted)}
+
+/* TACTICS PITCH */
+.tactics-layout{display:grid;grid-template-columns:1fr 280px;gap:16px}
+.pitch{background:linear-gradient(180deg,#1a3a1a 0%,#1d4a1d 50%,#1a3a1a 100%);border:1px solid #2a5a2a;border-radius:8px;padding:16px;min-height:440px;display:flex;flex-direction:column;justify-content:space-between;position:relative}
+.pitch::before{content:'';position:absolute;top:50%;left:10%;right:10%;height:1px;background:rgba(255,255,255,.12);transform:translateY(-50%)}
+.pitch-row{display:flex;justify-content:center;gap:12px}
+.player-dot{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.dot{width:38px;height:38px;border-radius:50%;background:#1f6feb;border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;transition:transform .15s}
+.dot:hover{transform:scale(1.1)}
+.dot-label{font-size:8px;color:rgba(255,255,255,.6);max-width:38px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.form-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.form-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:12px;transition:all .15s}
+.form-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.slider-group{margin-bottom:14px}
+.slider-label-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.slider-label{font-size:12px;color:var(--muted)}
+.slider-val{font-size:12px;font-weight:600;color:var(--text)}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+.mentality-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px}
+.mentality-btn{padding:7px;text-align:center;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:12px;transition:all .15s}
+.mentality-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* TRANSFER */
+.search-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-row input,.search-row select{padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none}
+.search-row input{flex:1;min-width:160px}
+.search-row input:focus,.search-row select:focus{border-color:var(--accent)}
+.bid-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center}
+.bid-modal.open{display:flex}
+.bid-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;width:360px;max-width:90vw}
+.bid-box h3{font-size:15px;font-weight:600;margin-bottom:16px}
+.bid-field{margin-bottom:14px}
+.bid-field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+.bid-field input{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none}
+.bid-field input:focus{border-color:var(--accent)}
+.bid-actions{display:flex;gap:8px;margin-top:16px}
+
+/* INBOX */
+.inbox-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;border-left:3px solid transparent}
+.inbox-item:hover{background:var(--bg3)}
+.inbox-item.unread{border-left-color:var(--accent)}
+.inbox-item:last-child{border-bottom:none}
+.inbox-row{display:flex;align-items:flex-start;gap:10px}
+.inbox-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.inbox-text{flex:1;min-width:0}
+.inbox-title{font-size:13px;font-weight:500;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inbox-msg{font-size:12px;color:var(--muted);line-height:1.4}
+.inbox-time{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* PRESS */
+.press-composer{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.press-composer label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+.press-composer select,.press-composer textarea{width:100%;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;margin-bottom:10px;font-family:inherit}
+.press-composer textarea{resize:none;height:56px}
+.press-composer select:focus,.press-composer textarea:focus{border-color:var(--accent)}
+.press-post{padding:14px 16px;border-bottom:1px solid var(--border)}
+.press-post:last-child{border-bottom:none}
+.press-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.press-manager-name{font-size:13px;font-weight:600;color:var(--accent)}
+.press-club-name{font-size:12px;color:var(--muted)}
+.press-quote{font-size:13px;line-height:1.6;color:var(--text)}
+.press-custom-text{color:var(--muted);font-style:italic}
+.press-timestamp{font-size:11px;color:var(--muted);margin-top:5px}
+
+/* MOBILE NAV */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:200}
+.mobile-nav-inner{display:flex;justify-content:space-around;padding:6px 0 8px}
+.mnav-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:var(--muted);font-size:9px;padding:4px 8px;border-radius:6px;transition:color .15s;min-width:44px}
+.mnav-item.active{color:var(--accent)}
+.mnav-item i{font-size:22px}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state i{font-size:32px;margin-bottom:10px;display:block;opacity:.4}
+.empty-state p{font-size:13px}
+
+/* DEV BARS */
+.dev-bar{height:5px;border-radius:3px;background:var(--bg3);margin-top:4px}
+.dev-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--green))}
+
+/* LEAGUE CL/RELEGATION */
+.pos-indicator{width:4px;height:24px;border-radius:2px;flex-shrink:0}
+.pos-cl{background:var(--accent)}.pos-cl2{background:#e6c419}.pos-rl{background:var(--red)}.pos-none{background:transparent}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding:14px 12px 80px}
+  .mobile-nav{display:block}
+  .tactics-layout{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <h1><i class="ti ti-ball-football" style="color:var(--accent)" aria-hidden="true"></i> FM Online <span class="logo-badge">LIVE</span></h1>
+    <div class="clock-pill"><i class="ti ti-clock" aria-hidden="true"></i><span id="clock-text">Season 1 · Week 1</span></div>
+  </div>
+  <div class="club-info-bar">
+    <div class="club-badge" id="sb-badge">—</div>
+    <div class="club-details">
+      <strong id="sb-club">Loading...</strong>
+      <span id="sb-pos">—</span>
+    </div>
+  </div>
+  <div class="nav-section-label">Main</div>
+  <div class="nav-item active" id="n-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Dashboard</div>
+  <div class="nav-item" id="n-squad" onclick="nav('squad')"><i class="ti ti-users" aria-hidden="true"></i> Squad</div>
+  <div class="nav-item" id="n-tactics" onclick="nav('tactics')"><i class="ti ti-chess" aria-hidden="true"></i> Tactics</div>
+  <div class="nav-section-label">Competition</div>
+  <div class="nav-item" id="n-table" onclick="nav('table')"><i class="ti ti-trophy" aria-hidden="true"></i> League Table</div>
+  <div class="nav-item" id="n-transfers" onclick="nav('transfers')"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Transfer Market</div>
+  <div class="nav-section-label">Club</div>
+  <div class="nav-item" id="n-inbox" onclick="nav('inbox')"><i class="ti ti-mail" aria-hidden="true"></i> Inbox <span class="nav-badge" id="inbox-badge" style="display:none">0</span></div>
+  <div class="nav-item" id="n-press" onclick="nav('press')"><i class="ti ti-microphone" aria-hidden="true"></i> Press Room</div>
+  <div class="nav-spacer"></div>
+  <div class="sidebar-footer">
+    <div class="logout-btn" onclick="logout()"><i class="ti ti-logout" aria-hidden="true"></i> Sign out</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div class="page-title">Dashboard</div>
+      <div style="font-size:12px;color:var(--muted)" id="dash-season-label">Season 1</div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-trophy" aria-hidden="true"></i> Position</div><div class="stat-val gold" id="d-pos">—</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-star" aria-hidden="true"></i> Points</div><div class="stat-val blue" id="d-pts">—</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-calendar" aria-hidden="true"></i> Played</div><div class="stat-val" id="d-played">—</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-cash" aria-hidden="true"></i> Wage Bill</div><div class="stat-val" id="d-wage" style="font-size:16px">—</div></div>
+    </div>
+    <div class="next-match" id="next-match-card">
+      <div class="next-match-label">Your Club</div>
+      <div class="fixture-teams"><span id="d-club-name">Loading...</span></div>
+      <div class="fixture-meta">The season begins when the game clock ticks for the first time</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Recent Results</span><span class="badge badge-gray" id="d-form">Form: —</span></div>
+      <div class="card-body" id="d-results">
+        <div class="empty-state"><i class="ti ti-ball-football" aria-hidden="true"></i><p>No results yet — season hasn't started</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Upcoming Fixtures</div>
+      <div class="card-body" id="d-fixtures">
+        <div class="empty-state"><i class="ti ti-calendar-event" aria-hidden="true"></i><p>Fixtures will appear once the season starts</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SQUAD -->
+  <div class="page" id="page-squad">
+    <div class="page-header">
+      <div class="page-title">Squad</div>
+      <button class="btn btn-primary btn-sm" onclick="nav('transfers')"><i class="ti ti-plus" aria-hidden="true"></i> Sign Player</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" id="tab-first" onclick="switchTab('first')">First Team</div>
+      <div class="tab" id="tab-bteam" onclick="switchTab('bteam')">B Team / Youth</div>
+    </div>
+    <div id="squad-first">
+      <div class="card">
+        <div class="card-header">First Team <span class="badge badge-blue" id="first-count">0 Players</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Contract</th><th>Wage/wk</th><th>Morale</th></tr></thead>
+            <tbody id="squad-first-body">
+              <tr><td colspan="7"><div class="empty-state"><i class="ti ti-users" aria-hidden="true"></i><p>No players yet — head to the transfer market</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="squad-bteam" style="display:none">
+      <div class="card">
+        <div class="card-header">B Team / Youth Development <span class="badge badge-green" id="bteam-count">0 Players</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>POT</th><th>Age</th><th>Development</th><th></th></tr></thead>
+            <tbody id="squad-bteam-body">
+              <tr><td colspan="7"><div class="empty-state"><i class="ti ti-school" aria-hidden="true"></i><p>No youth players yet</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TACTICS -->
+  <div class="page" id="page-tactics">
+    <div class="page-header">
+      <div class="page-title">Tactics</div>
+      <button class="btn btn-success btn-sm" onclick="saveTactics()"><i class="ti ti-device-floppy" aria-hidden="true"></i> Save</button>
+    </div>
+    <div class="tactics-layout">
+      <div class="card">
+        <div class="card-header">Formation & Lineup</div>
+        <div class="card-body">
+          <div class="form-btns" id="formation-btns">
+            <div class="form-btn active" onclick="setFormation(this,'4-3-3')">4-3-3</div>
+            <div class="form-btn" onclick="setFormation(this,'4-4-2')">4-4-2</div>
+            <div class="form-btn" onclick="setFormation(this,'4-2-3-1')">4-2-3-1</div>
+            <div class="form-btn" onclick="setFormation(this,'3-5-2')">3-5-2</div>
+            <div class="form-btn" onclick="setFormation(this,'5-3-2')">5-3-2</div>
+            <div class="form-btn" onclick="setFormation(this,'4-1-4-1')">4-1-4-1</div>
+          </div>
+          <div class="pitch" id="pitch"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">Team Instructions</div>
+          <div class="card-body">
+            <div class="slider-group">
+              <div class="slider-label-row"><span class="slider-label">Pressing</span><span class="slider-val" id="vl-press">6</span></div>
+              <input type="range" min="1" max="10" value="6" id="sl-press" oninput="document.getElementById('vl-press').textContent=this.value">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label-row"><span class="slider-label">Defensive Line</span><span class="slider-val" id="vl-def">5</span></div>
+              <input type="range" min="1" max="10" value="5" id="sl-def" oninput="document.getElementById('vl-def').textContent=this.value">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label-row"><span class="slider-label">Tempo</span><span class="slider-val" id="vl-tempo">6</span></div>
+              <input type="range" min="1" max="10" value="6" id="sl-tempo" oninput="document.getElementById('vl-tempo').textContent=this.value">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label-row"><span class="slider-label">Width</span><span class="slider-val" id="vl-width">5</span></div>
+              <input type="range" min="1" max="10" value="5" id="sl-width" oninput="document.getElementById('vl-width').textContent=this.value">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label-row"><span class="slider-label">Attacking Risk</span><span class="slider-val" id="vl-risk">5</span></div>
+              <input type="range" min="1" max="10" value="5" id="sl-risk" oninput="document.getElementById('vl-risk').textContent=this.value">
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Mentality</div>
+              <div class="mentality-grid">
+                <div class="mentality-btn active" onclick="setMentality(this,'balanced')">Balanced</div>
+                <div class="mentality-btn" onclick="setMentality(this,'attacking')">Attacking</div>
+                <div class="mentality-btn" onclick="setMentality(this,'defensive')">Defensive</div>
+                <div class="mentality-btn" onclick="setMentality(this,'counter')">Counter</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">Set Pieces</div>
+          <div class="card-body" style="font-size:13px;color:var(--muted)">
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span>Corners</span><span style="color:var(--text)">Near Post</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span>Free Kicks</span><span style="color:var(--text)">Direct</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0"><span>Throw-ins</span><span style="color:var(--text)">Short</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAGUE TABLE -->
+  <div class="page" id="page-table">
+    <div class="page-header">
+      <div class="page-title">League Table</div>
+      <span class="badge badge-blue">Premier League</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span>Standings</span>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--muted)">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:var(--accent);border-radius:2px;display:inline-block"></span>Champions League</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:var(--red);border-radius:2px;display:inline-block"></span>Relegation</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>Manager</th></tr></thead>
+          <tbody id="table-body"><tr><td colspan="12"><div class="empty-state"><i class="ti ti-trophy" aria-hidden="true"></i><p>Table will populate once the season starts</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSFERS -->
+  <div class="page" id="page-transfers">
+    <div class="page-header">
+      <div class="page-title">Transfer Market</div>
+      <span class="badge badge-blue" id="market-count">0 Players</span>
+    </div>
+    <div class="search-row">
+      <input type="text" id="search-name" placeholder="Search by name..." oninput="filterPlayers()">
+      <select id="filter-pos" onchange="filterPlayers()">
+        <option value="">All Positions</option>
+        <option>GK</option><option>CB</option><option>LB</option><option>RB</option>
+        <option>CDM</option><option>CM</option><option>CAM</option>
+        <option>LM</option><option>RM</option><option>LW</option><option>RW</option><option>ST</option>
+      </select>
+      <select id="filter-league" onchange="filterPlayers()">
+        <option value="">All Leagues</option>
+        <option>Premier League</option><option>La Liga</option><option>Bundesliga</option>
+        <option>Serie A</option><option>Ligue 1</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Club</th><th>League</th><th>Value</th><th>Wage</th><th></th></tr></thead>
+          <tbody id="transfer-body"><tr><td colspan="9"><div class="empty-state"><i class="ti ti-loader" aria-hidden="true"></i><p>Loading players...</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- INBOX -->
+  <div class="page" id="page-inbox">
+    <div class="page-header">
+      <div class="page-title">Inbox</div>
+      <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+    </div>
+    <div class="card" style="overflow:hidden">
+      <div id="inbox-list"><div class="empty-state" style="padding:40px"><i class="ti ti-mail" aria-hidden="true"></i><p>No messages yet</p></div></div>
+    </div>
+  </div>
+
+  <!-- PRESS ROOM -->
+  <div class="page" id="page-press">
+    <div class="page-header"><div class="page-title">Press Room</div></div>
+    <div class="press-composer">
+      <label>Choose a statement template</label>
+      <select id="press-template">
+        <option>Really pleased with the performance today.</option>
+        <option>Disappointing result — we need to be better.</option>
+        <option>A hard fought point, we take it.</option>
+        <option>The boys were absolutely brilliant today.</option>
+        <option>We dominated that game from start to finish.</option>
+        <option>We are building something special at this club.</option>
+        <option>The squad is working hard and the results will come.</option>
+        <option>Clean sheet, exactly what we needed.</option>
+        <option>We matched them all over the pitch today.</option>
+        <option>Credit to the opponent — they were the better side.</option>
+      </select>
+      <label>Add your own thoughts (optional)</label>
+      <textarea id="press-extra" placeholder="Add a sentence of your own..."></textarea>
+      <button class="btn btn-primary" onclick="postPress()"><i class="ti ti-send" aria-hidden="true"></i> Post Statement</button>
+    </div>
+    <div class="card" style="overflow:hidden">
+      <div class="card-header">Manager Feed</div>
+      <div id="press-feed"><div class="empty-state" style="padding:32px"><i class="ti ti-microphone" aria-hidden="true"></i><p>No statements yet — be the first to post</p></div></div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+</div><!-- end app -->
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <div class="mnav-item active" id="mn-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Home</div>
+    <div class="mnav-item" id="mn-squad" onclick="nav('squad')"><i class="ti ti-users" aria-hidden="true"></i>Squad</div>
+    <div class="mnav-item" id="mn-tactics" onclick="nav('tactics')"><i class="ti ti-chess" aria-hidden="true"></i>Tactics</div>
+    <div class="mnav-item" id="mn-transfers" onclick="nav('transfers')"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>Market</div>
+    <div class="mnav-item" id="mn-inbox" onclick="nav('inbox')"><i class="ti ti-mail" aria-hidden="true"></i>Inbox</div>
+  </div>
+</div>
+
+<!-- BID MODAL -->
+<div class="bid-modal" id="bid-modal">
+  <div class="bid-box">
+    <h3 id="bid-title">Make a Bid</h3>
+    <div class="bid-field"><label>Transfer Fee (£)</label><input type="number" id="bid-fee" placeholder="e.g. 50000000"></div>
+    <div class="bid-field"><label>Weekly Wage (£)</label><input type="number" id="bid-wage" placeholder="e.g. 150000"></div>
+    <div class="bid-field"><label>Contract Length (years)</label><input type="number" id="bid-years" min="1" max="5" value="3"></div>
+    <div class="bid-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="submitBid()">Submit Bid</button>
+      <button class="btn btn-ghost" onclick="closeBid()">Cancel</button>
+    </div>
+    <div id="bid-msg" style="font-size:12px;margin-top:10px;color:var(--muted)"></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const token = localStorage.getItem('fm_token');
+const manager = JSON.parse(localStorage.getItem('fm_manager') || '{}');
+if (!token) { window.location.href = '/'; }
+
+// ---- SOCKET ----
+let socket;
+try {
+  socket = io();
+  socket.emit('manager:join', manager.id);
+  socket.on('notification:new', () => { loadInboxCount(); if (currentPage === 'inbox') loadInbox(); });
+  socket.on('transfer:update', () => { if (currentPage === 'transfers') loadTransfers(); });
+} catch(e) {}
+
+// ---- STATE ----
+let currentPage = 'dashboard';
+let currentMentality = 'balanced';
+let currentFormation = '4-3-3';
+let allPlayers = [];
+let currentBidPlayer = null;
+
+const FORMATIONS = {
+  '4-3-3':   [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'LCM'},{n:'CM'},{n:'RCM'}],[{n:'LW'},{n:'ST'},{n:'RW'}]],
+  '4-4-2':   [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'LM'},{n:'LCM'},{n:'RCM'},{n:'RM'}],[{n:'ST'},{n:'ST'}]],
+  '4-2-3-1': [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'CDM'},{n:'CDM'}],[{n:'LAM'},{n:'CAM'},{n:'RAM'}],[{n:'ST'}]],
+  '3-5-2':   [[{n:'GK'}],[{n:'CB'},{n:'CB'},{n:'CB'}],[{n:'LWB'},{n:'LCM'},{n:'CM'},{n:'RCM'},{n:'RWB'}],[{n:'ST'},{n:'ST'}]],
+  '5-3-2':   [[{n:'GK'}],[{n:'LWB'},{n:'CB'},{n:'CB'},{n:'CB'},{n:'RWB'}],[{n:'LCM'},{n:'CM'},{n:'RCM'}],[{n:'ST'},{n:'ST'}]],
+  '4-1-4-1': [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'CDM'}],[{n:'LM'},{n:'LCM'},{n:'RCM'},{n:'RM'}],[{n:'ST'}]],
+};
+
+// ---- INIT ----
+const sbClub = document.getElementById('sb-club');
+const sbBadge = document.getElementById('sb-badge');
+const sbPos = document.getElementById('sb-pos');
+sbClub.textContent = manager.club_name || 'Your Club';
+sbBadge.textContent = (manager.club_name || 'XX').substring(0,2).toUpperCase();
+document.getElementById('d-club-name').textContent = manager.club_name || 'Your Club';
+
+loadClock();
+loadTable();
+loadTransfers();
+loadInbox();
+loadInboxCount();
+loadPress();
+loadSquad();
+buildPitch(currentFormation);
+
+// ---- NAVIGATION ----
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .mnav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const sn = document.getElementById('n-' + page);
+  const mn = document.getElementById('mn-' + page);
+  if (sn) sn.classList.add('active');
+  if (mn) mn.classList.add('active');
+  currentPage = page;
+  if (page === 'inbox') { loadInbox(); }
+  if (page === 'press') { loadPress(); }
+  if (page === 'table') { loadTable(); }
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-first').classList.toggle('active', tab === 'first');
+  document.getElementById('tab-bteam').classList.toggle('active', tab === 'bteam');
+  document.getElementById('squad-first').style.display = tab === 'first' ? 'block' : 'none';
+  document.getElementById('squad-bteam').style.display = tab === 'bteam' ? 'block' : 'none';
+}
+
+function logout() {
+  localStorage.removeItem('fm_token');
+  localStorage.removeItem('fm_manager');
+  window.location.href = '/';
+}
+
+// ---- API ----
+async function api(url, opts = {}) {
+  const res = await fetch(url, {
+    headers: { 'x-auth-token': token, 'Content-Type': 'application/json', ...opts.headers },
+    ...opts
+  });
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
+// ---- CLOCK ----
+async function loadClock() {
+  try {
+    const c = await api('/api/clock');
+    document.getElementById('clock-text').textContent = `Season ${c.current_season} · Week ${c.current_week}`;
+    document.getElementById('dash-season-label').textContent = `Season ${c.current_season}`;
+  } catch(e) {}
+}
+
+// ---- SQUAD ----
+async function loadSquad() {
+  if (!manager.club_id) return;
+  try {
+    const squad = await api(`/api/squad/${manager.club_id}`);
+    const first = squad.filter(p => p.team_type !== 'b');
+    const bteam = squad.filter(p => p.team_type === 'b');
+    document.getElementById('first-count').textContent = `${first.length} Players`;
+    document.getElementById('bteam-count').textContent = `${bteam.length} Players`;
+
+    // wage bill
+    const wageBill = first.reduce((s, p) => s + (p.weekly_wage || 0), 0);
+    document.getElementById('d-wage').textContent = `£${(wageBill).toLocaleString()}/wk`;
+
+    const fb = document.getElementById('squad-first-body');
+    fb.innerHTML = first.length ? first.map(p => `
+      <tr>
+        <td><div class="player-row"><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
+        <td><span class="pos-tag">${p.position}</span></td>
+        <td>${ovrBadge(p.overall_rating)}</td>
+        <td>${p.age}</td>
+        <td><span style="color:${p.expires_at_week && p.expires_at_week < 10 ? 'var(--red)' : 'var(--muted)'}">${p.expires_at_week ? 'Wk '+p.expires_at_week : '—'}</span></td>
+        <td style="color:var(--muted)">£${(p.weekly_wage||0).toLocaleString()}</td>
+        <td>${moraleBadge(p.happiness)}</td>
+      </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-users" aria-hidden="true"></i><p>No first team players yet</p></div></td></tr>';
+
+    const bb = document.getElementById('squad-bteam-body');
+    bb.innerHTML = bteam.length ? bteam.map(p => `
+      <tr>
+        <td><div class="player-row"><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
+        <td><span class="pos-tag">${p.position}</span></td>
+        <td>${ovrBadge(p.overall_rating)}</td>
+        <td><span style="color:var(--accent)">${p.potential || '—'}</span></td>
+        <td>${p.age}</td>
+        <td><div style="min-width:80px"><div style="font-size:11px;color:var(--muted)">${p.overall_rating}/100</div><div class="dev-bar"><div class="dev-fill" style="width:${p.overall_rating}%"></div></div></div></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="promotePlayer(${p.id})">Promote</button></td>
+      </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-school" aria-hidden="true"></i><p>No youth players yet</p></div></td></tr>';
+  } catch(e) { console.log('squad error',e); }
+}
+
+async function promotePlayer(id) {
+  try { await api(`/api/squad/promote/${id}`, { method:'POST' }); loadSquad(); } catch(e) {}
+}
+
+// ---- TABLE ----
+async function loadTable() {
+  if (!manager.server_id) return;
+  try {
+    const rows = await api(`/api/table/${manager.server_id}`);
+    const tbody = document.getElementById('table-body');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state" style="padding:32px"><i class="ti ti-trophy" aria-hidden="true"></i><p>Season not started yet</p></div></td></tr>'; return; }
+    tbody.innerHTML = rows.map((r, i) => {
+      const pos = i + 1;
+      const isYou = r.club_id === manager.club_id;
+      const ind = pos <= 4 ? 'pos-cl' : pos <= 6 ? 'pos-cl2' : pos >= 18 ? 'pos-rl' : 'pos-none';
+      if (isYou) {
+        document.getElementById('d-pos').textContent = pos + suffix(pos);
+        document.getElementById('d-pts').textContent = r.points;
+        document.getElementById('d-played').textContent = r.played;
+        sbPos.textContent = pos + suffix(pos) + ' · ' + r.points + ' pts';
+      }
+      return `<tr class="${isYou ? 'you-row' : ''}">
+        <td><div class="pos-indicator ${ind}"></div></td>
+        <td style="font-weight:600;color:${pos<=4?'var(--accent)':pos>=18?'var(--red)':'var(--muted)'}">${pos}</td>
+        <td style="font-weight:500">${r.club_name}${isYou?' 👑':''}</td>
+        <td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td>
+        <td>${r.goals_for||0}</td><td>${r.goals_against||0}</td>
+        <td style="color:${(r.goal_difference||0)>0?'var(--green)':(r.goal_difference||0)<0?'var(--red)':'var(--muted)'}">${(r.goal_difference||0)>0?'+':''}${r.goal_difference||0}</td>
+        <td style="font-weight:700">${r.points}</td>
+        <td style="font-size:12px;color:${isYou?'var(--accent)':'var(--muted)'}">${isYou?'You':'CPU'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.log('table error',e); }
+}
+
+// ---- TRANSFERS ----
+async function loadTransfers() {
+  try {
+    allPlayers = await api('/api/transfers/market');
+    renderPlayers(allPlayers);
+  } catch(e) { document.getElementById('transfer-body').innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="ti ti-alert-circle" aria-hidden="true"></i><p>Could not load players</p></div></td></tr>'; }
+}
+
+function renderPlayers(players) {
+  document.getElementById('market-count').textContent = `${players.length} Players`;
+  const tbody = document.getElementById('transfer-body');
+  if (!players.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state" style="padding:32px"><i class="ti ti-search" aria-hidden="true"></i><p>No players match your search</p></div></td></tr>'; return; }
+  tbody.innerHTML = players.slice(0,100).map(p => `<tr>
+    <td><div class="player-row"><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
+    <td><span class="pos-tag">${p.position}</span></td>
+    <td>${ovrBadge(p.overall_rating)}</td>
+    <td>${p.age}</td>
+    <td style="font-size:12px;color:var(--muted)">${p.club_name||'Free Agent'}</td>
+    <td style="font-size:12px;color:var(--muted)">${p.league||'—'}</td>
+    <td style="color:var(--gold)">£${Math.round(p.overall_rating*900000).toLocaleString()}</td>
+    <td style="color:var(--muted)">£${(p.weekly_wage||0).toLocaleString()}</td>
+    <td><button class="btn btn-primary btn-sm" onclick="openBid(${p.id},'${escape(p.name)}',${p.weekly_wage||0})">Bid</button></td>
+  </tr>`).join('');
+}
+
+function filterPlayers() {
+  const q = document.getElementById('search-name').value.toLowerCase();
+  const pos = document.getElementById('filter-pos').value;
+  const league = document.getElementById('filter-league').value;
+  renderPlayers(allPlayers.filter(p =>
+    (!q || p.name.toLowerCase().includes(q)) &&
+    (!pos || p.position === pos) &&
+    (!league || p.league === league)
+  ));
+}
+
+function openBid(id, name, wage) {
+  currentBidPlayer = { id, name, wage };
+  document.getElementById('bid-title').textContent = `Bid for ${unescape(name)}`;
+  document.getElementById('bid-wage').value = Math.round(wage * 1.2);
+  document.getElementById('bid-fee').value = '';
+  document.getElementById('bid-msg').textContent = '';
+  document.getElementById('bid-modal').classList.add('open');
+}
+
+function closeBid() { document.getElementById('bid-modal').classList.remove('open'); }
+
+async function submitBid() {
+  const fee = parseInt(document.getElementById('bid-fee').value);
+  const wage = parseInt(document.getElementById('bid-wage').value);
+  const years = parseInt(document.getElementById('bid-years').value);
+  const msg = document.getElementById('bid-msg');
+  if (!fee || !wage || !years) { msg.textContent = 'Please fill all fields.'; msg.style.color = 'var(--red)'; return; }
+  msg.textContent = 'Submitting...'; msg.style.color = 'var(--muted)';
+  try {
+    const r = await api('/api/transfers/bid', { method:'POST', body: JSON.stringify({ player_id: currentBidPlayer.id, from_club_id: manager.club_id, offered_wage: wage, offered_years: years, bid_amount: fee }) });
+    if (r.success) { msg.textContent = 'Bid submitted! The player will respond within 48 hours.'; msg.style.color = 'var(--green)'; setTimeout(closeBid, 2000); }
+    else { msg.textContent = r.error || 'Bid failed.'; msg.style.color = 'var(--red)'; }
+  } catch(e) { msg.textContent = 'Server error. Try again.'; msg.style.color = 'var(--red)'; }
+}
+
+// ---- INBOX ----
+async function loadInboxCount() {
+  try {
+    const notifs = await api(`/api/notifications/${manager.id}`);
+    const unread = notifs.filter(n => !n.read).length;
+    const badge = document.getElementById('inbox-badge');
+    badge.style.display = unread > 0 ? 'inline' : 'none';
+    badge.textContent = unread;
+  } catch(e) {}
+}
+
+async function loadInbox() {
+  try {
+    const notifs = await api(`/api/notifications/${manager.id}`);
+    const el = document.getElementById('inbox-list');
+    if (!notifs.length) { el.innerHTML = '<div class="empty-state" style="padding:40px"><i class="ti ti-mail" aria-hidden="true"></i><p>No messages</p></div>'; return; }
+    const iconMap = { match_result:'ti-ball-football', poach_attempt:'ti-arrows-exchange', contract:'ti-file-text', week_start:'ti-calendar' };
+    const colorMap = { match_result:'rgba(46,160,67,.15)', poach_attempt:'rgba(248,81,73,.15)', contract:'rgba(212,168,67,.15)', week_start:'rgba(56,139,253,.15)' };
+    el.innerHTML = notifs.map(n => `
+      <div class="inbox-item ${!n.read?'unread':''}" onclick="markRead(${n.id},this)">
+        <div class="inbox-row">
+          <div class="inbox-icon" style="background:${colorMap[n.type]||'var(--bg3)'}"><i class="ti ${iconMap[n.type]||'ti-bell'}" style="color:var(--text)" aria-hidden="true"></i></div>
+          <div class="inbox-text">
+            <div class="inbox-title">${n.message}</div>
+            <div class="inbox-time">${new Date(n.created_at).toLocaleString()}</div>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function markRead(id, el) {
+  el.classList.remove('unread');
+  try { await api(`/api/notifications/${id}/read`, { method:'POST' }); loadInboxCount(); } catch(e) {}
+}
+
+async function markAllRead() {
+  document.querySelectorAll('.inbox-item.unread').forEach(el => el.classList.remove('unread'));
+  try { await api(`/api/notifications/${manager.id}/read-all`, { method:'POST' }); loadInboxCount(); } catch(e) {}
+}
+
+// ---- PRESS ----
+async function loadPress() {
+  try {
+    const posts = await api(`/api/press/${manager.server_id}`);
+    const el = document.getElementById('press-feed');
+    if (!posts.length) { el.innerHTML = '<div class="empty-state" style="padding:32px"><i class="ti ti-microphone" aria-hidden="true"></i><p>No statements yet</p></div>'; return; }
+    el.innerHTML = posts.map(p => `
+      <div class="press-post">
+        <div class="press-meta">
+          <span class="press-manager-name">${p.username}</span>
+          <span class="press-club-name">· ${p.club_name}</span>
+        </div>
+        <div class="press-quote">"${p.template_text}${p.custom_text ? ' <span class="press-custom-text">'+p.custom_text+'</span>' : ''}"</div>
+        <div class="press-timestamp">${new Date(p.created_at).toLocaleString()}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function postPress() {
+  const template = document.getElementById('press-template').value;
+  const custom = document.getElementById('press-extra').value.trim();
+  try {
+    await api('/api/press', { method:'POST', body: JSON.stringify({ server_id: manager.server_id, club_id: manager.club_id, template_text: template, custom_text: custom }) });
+    document.getElementById('press-extra').value = '';
+    loadPress();
+  } catch(e) { alert('Could not post statement'); }
+}
+
+// ---- TACTICS ----
+function setFormation(el, f) {
+  document.querySelectorAll('.form-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentFormation = f;
+  buildPitch(f);
+}
+
+function setMentality(el, v) {
+  document.querySelectorAll('.mentality-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentMentality = v;
+}
+
+async function saveTactics() {
+  const data = {
+    club_id: manager.club_id,
+    formation: currentFormation,
+    pressing: parseInt(document.getElementById('sl-press').value),
+    defensive_line: parseInt(document.getElementById('sl-def').value),
+    tempo: parseInt(document.getElementById('sl-tempo').value),
+    width: parseInt(document.getElementById('sl-width').value),
+    attacking_risk: parseInt(document.getElementById('sl-risk').value),
+    mentality: currentMentality
+  };
+  try {
+    await api('/api/tactics', { method:'POST', body: JSON.stringify(data) });
+    const btn = event.target;
+    btn.textContent = '✓ Saved';
+    setTimeout(() => { btn.innerHTML = '<i class="ti ti-device-floppy" aria-hidden="true"></i> Save'; }, 2000);
+  } catch(e) { alert('Could not save tactics'); }
+}
+
+function buildPitch(f) {
+  const pitch = document.getElementById('pitch');
+  const rows = FORMATIONS[f] || FORMATIONS['4-3-3'];
+  pitch.innerHTML = '';
+  [...rows].reverse().forEach(row => {
+    const div = document.createElement('div');
+    div.className = 'pitch-row';
+    row.forEach(slot => {
+      div.innerHTML += `<div class="player-dot"><div class="dot">${slot.n}</div><div class="dot-label">${slot.n}</div></div>`;
+    });
+    pitch.appendChild(div);
+  });
+}
+
+// ---- HELPERS ----
+function initials(name) {
+  return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+}
+
+function ovrBadge(ovr) {
+  const cls = ovr >= 85 ? 'ovr-gold' : ovr >= 75 ? 'ovr-green' : ovr >= 65 ? 'ovr-blue' : 'ovr-gray';
+  return `<div class="ovr-badge ${cls}">${ovr}</div>`;
+}
+
+function moraleBadge(h) {
+  if (!h && h !== 0) return '<span class="badge badge-gray">—</span>';
+  if (h >= 75) return '<span class="badge badge-green">Happy</span>';
+  if (h >= 50) return '<span class="badge badge-blue">Content</span>';
+  if (h >= 30) return '<span class="badge badge-gold">Unsettled</span>';
+  return '<span class="badge badge-red">Unhappy</span>';
+}
+
+function suffix(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  return s[(v-20)%10]||s[v]||s[0];
+}
+</script>
+</body>
+</html>
