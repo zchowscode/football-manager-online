@@ -612,10 +612,12 @@ async function api(url, opts = {}) {
     headers: { 'x-auth-token': token, 'Content-Type': 'application/json', ...opts.headers },
     ...opts
   });
-  if (!res.ok) throw new Error(res.status);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || res.status);
+  }
   return res.json();
 }
-
 // ---- TOAST ----
 function showToast(msg, color) {
   const t = document.getElementById('toast');
