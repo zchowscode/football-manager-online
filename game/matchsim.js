@@ -14,14 +14,60 @@ function simulateMatch(homeClub, awayClub, homeTactics, awayTactics, homeSquad, 
 
   const homeGoals = poissonRandom(homeLambda);
   const awayGoals = poissonRandom(awayLambda);
-  const homePossession = Math.min(75, Math.max(25, Math.round(50 + (homeTactics.tempo - awayTactics.tempo) * 2 + Math.random() * 10 - 5)));
+
+  const homePossession = Math.min(75, Math.max(25,
+    Math.round(50 + (homeTactics.tempo - awayTactics.tempo) * 2 + Math.random() * 10 - 5)
+  ));
+
+  const homeScorers = pickScorers(homeSquad, homeGoals);
+  const awayScorers = pickScorers(awaySquad, awayGoals);
 
   return {
     homeGoals, awayGoals,
     homePossession, awayPossession: 100 - homePossession,
     homeShots: Math.round(homeGoals * 4 + Math.random() * 6),
     awayShots: Math.round(awayGoals * 4 + Math.random() * 6),
+    homeScorers,
+    awayScorers,
+    homeStrength,
+    awayStrength
   };
+}
+
+function pickScorers(squad, goals) {
+  if (!goals || !squad.length) return [];
+  // Weight players by position and shooting
+  const attackers = squad.filter(p => ['ST','LW','RW','CAM'].includes(p.position));
+  const midfielders = squad.filter(p => ['CM','CDM','LM','RM'].includes(p.position));
+  const defenders = squad.filter(p => ['CB','LB','RB','LWB','RWB'].includes(p.position));
+
+  const pool = [
+    ...attackers.map(p => ({ ...p, weight: (p.shooting || 65) * 3 })),
+    ...midfielders.map(p => ({ ...p, weight: (p.shooting || 65) * 1.2 })),
+    ...defenders.map(p => ({ ...p, weight: (p.shooting || 65) * 0.3 })),
+  ];
+
+  if (!pool.length) return [];
+
+  const scorers = [];
+  for (let i = 0; i < goals; i++) {
+    const scorer = weightedRandom(pool);
+    if (scorer) {
+      const minute = Math.floor(Math.random() * 90) + 1;
+      scorers.push({ player_id: scorer.id, name: scorer.name, minute });
+    }
+  }
+  return scorers.sort((a, b) => a.minute - b.minute);
+}
+
+function weightedRandom(pool) {
+  const total = pool.reduce((s, p) => s + p.weight, 0);
+  let r = Math.random() * total;
+  for (const p of pool) {
+    r -= p.weight;
+    if (r <= 0) return p;
+  }
+  return pool[pool.length - 1];
 }
 
 function calculateSquadStrength(squad) {
@@ -30,15 +76,18 @@ function calculateSquadStrength(squad) {
   const midfielders = squad.filter(p => ['CM','CDM','LM','RM'].includes(p.position));
   const defenders = squad.filter(p => ['CB','LB','RB','LWB','RWB'].includes(p.position));
   const gk = squad.filter(p => p.position === 'GK');
+
   const avgAttack = avg([
     ...attackers.map(p => p.shooting * 0.4 + p.pace * 0.3 + p.dribbling * 0.3),
     ...midfielders.map(p => p.passing * 0.4 + p.shooting * 0.3 + p.dribbling * 0.3)
   ]) || 65;
+
   const avgDefence = avg([
     ...defenders.map(p => p.defending * 0.5 + p.physical * 0.3 + p.pace * 0.2),
     ...gk.map(p => p.overall_rating),
     ...midfielders.map(p => p.defending * 0.5)
   ]) || 65;
+
   return { attack: avgAttack, defence: avgDefence };
 }
 
