@@ -96,7 +96,51 @@ io.on("connection", (socket) => {
     onlineManagers.delete(socket.id);
   });
 });
+// Resolve expired transfer bids every hour
+cron.schedule("0 * * * *", async () => {
+  try {
+    const [expiredBids] = await pool.execute(
+      "SELECT * FROM transfer_bids WHERE status = 'pending' AND expires_at < NOW()"
+    );
+    for (const bid of expiredBids) {
+      const [[player]] = await pool.execute('SELECT * FROM players WHERE id = ?', [bid.player_id]);
+      const [[contract]] = await pool.execute('SELECT * FROM contracts WHERE player_id = ? AND active = 1', [bid.player_id]);
+      const [[currentClub]] = await pool.execute('SELECT * FROM clubs WHERE id = ?', [bid.to_club_id]);
+      const [[biddingClub]] = await pool.execute('SELECT * FROM clubs WHERE id = ?', [bid.from_club_id]);
 
+      const { calculatePlayerDecision } = require('./game/poaching');
+      const result = calculatePlayerDecision(player, contract, currentClub, biddingClub, bid);
+
+      if (result.decision === 'leave') {
+        await pool.execute('UPDATE contracts SET active = 0 WHERE player_id = ? AND active = 1', [bid.player_id]);
+        const [[clock]] = await pool.execute('SELECT * FROM game_clock LIMIT 1');
+        await pool.execute(
+          `INSERT INTO contracts (player_id, club_id, weekly_wage, expires_at_week, active, team_type)
+           VALUES (?, ?, ?, ?, 1, 'first')`,
+          [bid.player_id, bid.from_club_id, bid.offered_wage, clock.current_week + bid.offered_years * 38]
+        );
+        await pool.execute("UPDATE transfer_bids SET status = 'completed', player_decision = 'leave' WHERE id = ?", [bid.id]);
+
+        const [[biddingClubFull]] = await pool.execute('SELECT manager_id FROM clubs WHERE id = ?', [bid.from_club_id]);
+        if (biddingClubFull?.manager_id) {
+          await sendNotification(biddingClubFull.manager_id, 'contract', `✅ ${player.name} has agreed to join your club!`, { player_id: bid.player_id });
+        }
+        const [[defendingClubFull]] = await pool.execute('SELECT manager_id FROM clubs WHERE id = ?', [bid.to_club_id]);
+        if (defendingClubFull?.manager_id) {
+          await sendNotification(defendingClubFull.manager_id, 'contract', `❌ ${player.name} has left to join another club.`, { player_id: bid.player_id });
+        }
+      } else {
+        await pool.execute("UPDATE transfer_bids SET status = 'completed', player_decision = 'stay' WHERE id = ?", [bid.id]);
+        const [[biddingClubFull]] = await pool.execute('SELECT manager_id FROM clubs WHERE id = ?', [bid.from_club_id]);
+        if (biddingClubFull?.manager_id) {
+          await sendNotification(biddingClubFull.manager_id, 'contract', `❌ ${player.name} has rejected your offer and decided to stay.`, { player_id: bid.player_id });
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Bid resolution error:', err.message);
+  }
+});
 // ============================================================
 // GAME CLOCK - every 2 real days = 1 game week
 // ============================================================
@@ -272,6 +316,8 @@ async function endSeason(season) {
     "UPDATE game_clock SET current_week = 1, current_season = current_season + 1"
   );
 }
+
+
 
 // ============================================================
 // ROUTES
