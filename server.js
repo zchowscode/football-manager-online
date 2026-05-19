@@ -151,7 +151,6 @@ async function simulateMatchday(week, season) {
       const [[homeClub]] = await pool.execute("SELECT * FROM clubs WHERE id = ?", [match.home_club_id]);
       const [[awayClub]] = await pool.execute("SELECT * FROM clubs WHERE id = ?", [match.away_club_id]);
 
-      // Get real squads
       const [homeSquad] = await pool.execute(
         `SELECT p.* FROM players p
          JOIN contracts c ON p.id = c.player_id
@@ -165,7 +164,6 @@ async function simulateMatchday(week, season) {
         [match.away_club_id]
       );
 
-      // Get tactics with defaults fallback
       const defaultTactics = {
         pressing: 6, defensive_line: 5, tempo: 6,
         width: 5, attacking_risk: 5, mentality: 'balanced'
@@ -175,7 +173,6 @@ async function simulateMatchday(week, season) {
       const homeTactics = homeTacticsRows[0] || defaultTactics;
       const awayTactics = awayTacticsRows[0] || defaultTactics;
 
-      // Run match engine
       const result = simulateMatch(homeClub, awayClub, homeTactics, awayTactics, homeSquad, awaySquad);
 
       const scorersSummary = [
@@ -183,7 +180,6 @@ async function simulateMatchday(week, season) {
         ...result.awayScorers.map(s => `${s.name} ${s.minute}'`)
       ].join(', ');
 
-      // Save result
       await pool.execute(
         `UPDATE fixtures SET
           home_goals = ?, away_goals = ?, played = true,
@@ -281,8 +277,10 @@ async function endSeason(season) {
 // ROUTES
 // ============================================================
 const { router: authRouter } = require("./routes/auth");
+const transferRouter = require("./routes/transfers");
 
 app.use("/api/auth", authRouter);
+app.use("/api/transfers", transferRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -328,7 +326,7 @@ app.get("/api/table/:serverId", async (req, res) => {
   }
 });
 
-// Squad - works for any club_id
+// Squad
 app.get("/api/squad/:clubId", async (req, res) => {
   try {
     const [rows] = await pool.execute(
@@ -414,47 +412,6 @@ app.post("/api/notifications/:managerId/read-all", async (req, res) => {
   }
 });
 
-// Transfer market
-app.get("/api/transfers/market", async (req, res) => {
-  try {
-    const [rows] = await pool.execute(
-      `SELECT p.*, cl.name AS club_name, cl.league
-       FROM players p
-       LEFT JOIN contracts c ON c.player_id = p.id AND c.active = 1
-       LEFT JOIN clubs cl ON cl.id = c.club_id
-       ORDER BY p.overall_rating DESC LIMIT 500`
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Submit transfer bid
-app.post("/api/transfers/bid", async (req, res) => {
-  const { player_id, from_club_id, offered_wage, offered_years, bid_amount } = req.body;
-  if (!player_id || !from_club_id || !offered_wage || !offered_years) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-  try {
-    const [players] = await pool.execute("SELECT * FROM players WHERE id = ?", [player_id]);
-    if (!players.length) return res.status(404).json({ error: "Player not found" });
-
-    await pool.execute("UPDATE contracts SET active = 0 WHERE player_id = ?", [player_id]);
-
-    const durationWeeks = offered_years * 38;
-    await pool.execute(
-      `INSERT INTO contracts (player_id, club_id, weekly_wage, expires_at_week, active, team_type)
-       VALUES (?, ?, ?, ?, 1, 'first')`,
-      [player_id, from_club_id, offered_wage, durationWeeks]
-    );
-
-    res.json({ success: true, message: `${players[0].name} signed successfully!` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // Press room
 app.get("/api/press/:serverId", async (req, res) => {
   try {
@@ -519,13 +476,12 @@ app.post("/api/squad/promote/:id", async (req, res) => {
   }
 });
 
-// Generate fixtures for a season
+// Generate fixtures
 app.get("/api/admin/generate-fixtures", async (req, res) => {
   try {
     const serverId = req.query.server_id || 1;
     const season = req.query.season || 1;
 
-    // Clear existing unplayed fixtures
     await pool.execute(
       "DELETE FROM fixtures WHERE server_id = ? AND season = ? AND played = false",
       [serverId, season]
@@ -533,12 +489,10 @@ app.get("/api/admin/generate-fixtures", async (req, res) => {
 
     const [clubs] = await pool.execute("SELECT id FROM clubs ORDER BY id ASC");
     const clubIds = clubs.map(c => c.id);
-    const n = clubIds.length;
     const fixtures = [];
 
-    // Round-robin algorithm
     const ids = [...clubIds];
-    if (ids.length % 2 !== 0) ids.push(null); // bye
+    if (ids.length % 2 !== 0) ids.push(null);
     const rounds = ids.length - 1;
     const half = ids.length / 2;
 
@@ -550,15 +504,12 @@ app.get("/api/admin/generate-fixtures", async (req, res) => {
           fixtures.push([home, away, round + 1, season, serverId]);
         }
       }
-      // Rotate all except first
       ids.splice(1, 0, ids.pop());
     }
 
-    // Return fixtures (second half of season)
     const returnFixtures = fixtures.map(([h, a, w, s, sid]) => [a, h, w + rounds, s, sid]);
     const allFixtures = [...fixtures, ...returnFixtures];
 
-    // Bulk insert
     const values = allFixtures.map(f => `(${f[0]}, ${f[1]}, ${f[2]}, ${f[3]}, ${f[4]}, false)`).join(',');
     await pool.execute(
       `INSERT INTO fixtures (home_club_id, away_club_id, week, season, server_id, played) VALUES ${values}`
@@ -583,7 +534,7 @@ app.get("/api/seed-contracts", async (req, res) => {
   try {
     const csvPath = path.join(__dirname, "players_data_light-2025_2026.csv");
     const text = fs.readFileSync(csvPath, "utf8");
-    const lines = text.trim().split("\n");
+    const lines = text.trim().split(/\r?\n/);
     const headers = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
 
     const clubMap = {
@@ -595,17 +546,33 @@ app.get("/api/seed-contracts", async (req, res) => {
     };
 
     const [allPlayers] = await pool.execute("SELECT id, name FROM players");
+
+    const normalize = str => str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
     const playerMap = {};
-    for (const p of allPlayers) playerMap[p.name] = p.id;
+    for (const p of allPlayers) {
+      playerMap[normalize(p.name)] = p.id;
+    }
 
     const values = [];
+    const matched = new Set();
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(",");
       const get = (name) => cols[headers.indexOf(name)]?.replace(/"/g, "").trim() || null;
       const playerName = get("Player");
       const squad = get("Squad");
-      if (!playerName || !squad || !clubMap[squad] || !playerMap[playerName]) continue;
-      values.push(`(${playerMap[playerName]}, ${clubMap[squad]}, 10000, 100, 1, 'first')`);
+      if (!playerName || !squad || !clubMap[squad]) continue;
+
+      const normalizedName = normalize(playerName);
+      const playerId = playerMap[normalizedName];
+      if (!playerId || matched.has(playerId)) continue;
+
+      matched.add(playerId);
+      values.push(`(${playerId}, ${clubMap[squad]}, 10000, 100, 1, 'first')`);
     }
 
     if (values.length > 0) {
@@ -625,7 +592,7 @@ app.get("/api/seed-players", async (req, res) => {
   try {
     const csvPath = path.join(__dirname, "players_data_light-2025_2026.csv");
     const text = fs.readFileSync(csvPath, "utf8");
-    const lines = text.trim().split("\n");
+    const lines = text.trim().split(/\r?\n/);
     const headers = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
 
     let inserted = 0;
