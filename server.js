@@ -407,7 +407,20 @@ app.get('/api/seed-players', async (req, res) => {
       if (!name) continue;
 
       await pool.execute(
-        `INSERT IGNORE INTO players (name, position, overall_rating, potential, age, nationality, pace, shooting, passing, dribbling, defending, physical, reputation, happin
+        "INSERT IGNORE INTO players (name, position, overall_rating, potential, age, nationality, pace, shooting, passing, dribbling, defending, physical, reputation, happiness) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [name, position, overall, overall + Math.floor(Math.random()*5), age, nationality,
+         parseInt(get('pace'))||65, parseInt(get('shooting'))||65, parseInt(get('passing'))||65,
+         parseInt(get('dribbling'))||65, parseInt(get('defending'))||65, parseInt(get('physical'))||65,
+         70, 80]
+      );
+      inserted++;
+    }
+
+    res.json({ success: true, inserted });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // Serve login page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
