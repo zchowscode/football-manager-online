@@ -843,8 +843,8 @@ async function submitBid() {
       msg.textContent = r.error || 'Bid failed.';
       msg.style.color = 'var(--red)';
     }
-  } catch(e) {
-    msg.textContent = 'Server error. Try again.';
+ } catch(e) {
+    msg.textContent = e.message || 'Server error. Try again.';
     msg.style.color = 'var(--red)';
   }
 }
