@@ -7,7 +7,7 @@ const cron = require("node-cron");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-const { simulateMatch } = require('./matchsim');
+const { simulateMatch } = require('./game/matchsim');
 
 const app = express();
 const server = http.createServer(app);
