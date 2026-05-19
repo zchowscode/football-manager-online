@@ -18,6 +18,16 @@ router.post('/bid', async (req, res) => {
       return res.status(404).json({ error: 'Player not found' });
     }
 
+    // Check minimum transfer fee
+    const playerValue = Math.round((player.overall_rating || 60) * 900000);
+    const minFee = Math.round(playerValue * 0.8);
+    if (bid_amount < minFee) {
+      await conn.rollback();
+      return res.status(400).json({
+        error: `Bid too low. ${player.name} is valued at £${playerValue.toLocaleString()}. Minimum bid is £${minFee.toLocaleString()}.`
+      });
+    }
+
     const [existingBid] = await conn.execute(
       "SELECT id FROM transfer_bids WHERE player_id = ? AND status = 'pending'", [player_id]
     );
@@ -34,28 +44,36 @@ router.post('/bid', async (req, res) => {
       return res.status(400).json({ error: 'Player recently signed - cannot be poached yet' });
     }
 
+    // Free agents don't need a transfer fee
+    if (!contract && bid_amount > 0) {
+      await conn.rollback();
+      return res.status(400).json({ error: 'This player is a free agent — no transfer fee needed. Set fee to 0.' });
+    }
+
     const [result] = await conn.execute(
       `INSERT INTO transfer_bids 
         (player_id, from_club_id, to_club_id, bid_amount, offered_wage, offered_years, expires_at)
        VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 48 HOUR))`,
-      [player_id, player.club_id, from_club_id, bid_amount, offered_wage, offered_years]
+      [player_id, contract ? contract.club_id : null, from_club_id, bid_amount, offered_wage, offered_years]
     );
 
     await conn.commit();
 
-    const [[defendingClub]] = await pool.execute(
-      'SELECT manager_id FROM clubs WHERE id = ?', [player.club_id]
-    );
-    if (defendingClub?.manager_id && req.sendNotification) {
-      req.sendNotification(
-        defendingClub.manager_id,
-        'poach_attempt',
-        `Someone is trying to poach ${player.name}! You have 48 hours to respond.`,
-        { player_id, bid_id: result.insertId, offered_wage, bid_amount }
+    if (contract) {
+      const [[defendingClub]] = await pool.execute(
+        'SELECT manager_id FROM clubs WHERE id = ?', [contract.club_id]
       );
+      if (defendingClub?.manager_id && req.sendNotification) {
+        req.sendNotification(
+          defendingClub.manager_id,
+          'poach_attempt',
+          `£${bid_amount.toLocaleString()} bid received for ${player.name}! You have 48 hours to respond.`,
+          { player_id, bid_id: result.insertId, offered_wage, bid_amount }
+        );
+      }
     }
 
-    res.json({ success: true, bid_id: result.insertId });
+    res.json({ success: true, bid_id: result.insertId, message: `Bid submitted for ${player.name}` });
   } catch (err) {
     await conn.rollback();
     res.status(500).json({ error: err.message });
@@ -128,7 +146,9 @@ router.get('/market', async (req, res) => {
   const { position, league, search } = req.query;
   try {
     let query = `
-      SELECT p.*, cl.name AS club_name, cl.league
+      SELECT p.*, cl.name AS club_name, cl.league,
+        ROUND(p.overall_rating * 900000) as market_value,
+        ROUND(p.overall_rating * 900000 * 0.8) as min_fee
       FROM players p
       LEFT JOIN contracts c ON c.player_id = p.id AND c.active = 1
       LEFT JOIN clubs cl ON cl.id = c.club_id
