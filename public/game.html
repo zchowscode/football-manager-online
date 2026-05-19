@@ -137,10 +137,16 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 .search-row input,.search-row select{padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none}
 .search-row input{flex:1;min-width:160px}
 .search-row input:focus,.search-row select:focus{border-color:var(--accent)}
-.bid-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center}
-.bid-modal.open{display:flex}
-.bid-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;width:360px;max-width:90vw}
-.bid-box h3{font-size:15px;font-weight:600;margin-bottom:16px}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;width:420px;max-width:92vw;max-height:88vh;overflow-y:auto}
+.modal-box.wide{width:640px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-header h3{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{color:var(--text);background:var(--bg3)}
 .bid-field{margin-bottom:14px}
 .bid-field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
 .bid-field input{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none}
@@ -194,6 +200,10 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 .pos-indicator{width:4px;height:24px;border-radius:2px;flex-shrink:0}
 .pos-cl{background:var(--accent)}.pos-cl2{background:#e6c419}.pos-rl{background:var(--red)}.pos-none{background:transparent}
 
+/* SIGN SUCCESS TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
 @media(max-width:768px){
   .sidebar{display:none}
   .main{margin-left:0;padding:14px 12px 80px}
@@ -209,8 +219,8 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 <!-- SIDEBAR -->
 <div class="sidebar">
   <div class="logo">
-    <h1><i class="ti ti-ball-football" style="color:var(--accent)" aria-hidden="true"></i> FM Online <span class="logo-badge">LIVE</span></h1>
-    <div class="clock-pill"><i class="ti ti-clock" aria-hidden="true"></i><span id="clock-text">Season 1 · Week 1</span></div>
+    <h1><i class="ti ti-ball-football" style="color:var(--accent)"></i> FM Online <span class="logo-badge">LIVE</span></h1>
+    <div class="clock-pill"><i class="ti ti-clock"></i><span id="clock-text">Season 1 · Week 1</span></div>
   </div>
   <div class="club-info-bar">
     <div class="club-badge" id="sb-badge">—</div>
@@ -220,18 +230,18 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
     </div>
   </div>
   <div class="nav-section-label">Main</div>
-  <div class="nav-item active" id="n-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Dashboard</div>
-  <div class="nav-item" id="n-squad" onclick="nav('squad')"><i class="ti ti-users" aria-hidden="true"></i> Squad</div>
-  <div class="nav-item" id="n-tactics" onclick="nav('tactics')"><i class="ti ti-chess" aria-hidden="true"></i> Tactics</div>
+  <div class="nav-item active" id="n-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+  <div class="nav-item" id="n-squad" onclick="nav('squad')"><i class="ti ti-users"></i> Squad</div>
+  <div class="nav-item" id="n-tactics" onclick="nav('tactics')"><i class="ti ti-chess"></i> Tactics</div>
   <div class="nav-section-label">Competition</div>
-  <div class="nav-item" id="n-table" onclick="nav('table')"><i class="ti ti-trophy" aria-hidden="true"></i> League Table</div>
-  <div class="nav-item" id="n-transfers" onclick="nav('transfers')"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Transfer Market</div>
+  <div class="nav-item" id="n-table" onclick="nav('table')"><i class="ti ti-trophy"></i> League Table</div>
+  <div class="nav-item" id="n-transfers" onclick="nav('transfers')"><i class="ti ti-arrows-exchange"></i> Transfer Market</div>
   <div class="nav-section-label">Club</div>
-  <div class="nav-item" id="n-inbox" onclick="nav('inbox')"><i class="ti ti-mail" aria-hidden="true"></i> Inbox <span class="nav-badge" id="inbox-badge" style="display:none">0</span></div>
-  <div class="nav-item" id="n-press" onclick="nav('press')"><i class="ti ti-microphone" aria-hidden="true"></i> Press Room</div>
+  <div class="nav-item" id="n-inbox" onclick="nav('inbox')"><i class="ti ti-mail"></i> Inbox <span class="nav-badge" id="inbox-badge" style="display:none">0</span></div>
+  <div class="nav-item" id="n-press" onclick="nav('press')"><i class="ti ti-microphone"></i> Press Room</div>
   <div class="nav-spacer"></div>
   <div class="sidebar-footer">
-    <div class="logout-btn" onclick="logout()"><i class="ti ti-logout" aria-hidden="true"></i> Sign out</div>
+    <div class="logout-btn" onclick="logout()"><i class="ti ti-logout"></i> Sign out</div>
   </div>
 </div>
 
@@ -245,10 +255,10 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
       <div style="font-size:12px;color:var(--muted)" id="dash-season-label">Season 1</div>
     </div>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-trophy" aria-hidden="true"></i> Position</div><div class="stat-val gold" id="d-pos">—</div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-star" aria-hidden="true"></i> Points</div><div class="stat-val blue" id="d-pts">—</div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-calendar" aria-hidden="true"></i> Played</div><div class="stat-val" id="d-played">—</div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-cash" aria-hidden="true"></i> Wage Bill</div><div class="stat-val" id="d-wage" style="font-size:16px">—</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-trophy"></i> Position</div><div class="stat-val gold" id="d-pos">—</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-star"></i> Points</div><div class="stat-val blue" id="d-pts">—</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-calendar"></i> Played</div><div class="stat-val" id="d-played">—</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-cash"></i> Wage Bill</div><div class="stat-val" id="d-wage" style="font-size:16px">—</div></div>
     </div>
     <div class="next-match" id="next-match-card">
       <div class="next-match-label">Your Club</div>
@@ -258,13 +268,13 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
     <div class="card">
       <div class="card-header"><span>Recent Results</span><span class="badge badge-gray" id="d-form">Form: —</span></div>
       <div class="card-body" id="d-results">
-        <div class="empty-state"><i class="ti ti-ball-football" aria-hidden="true"></i><p>No results yet — season hasn't started</p></div>
+        <div class="empty-state"><i class="ti ti-ball-football"></i><p>No results yet — season hasn't started</p></div>
       </div>
     </div>
     <div class="card">
       <div class="card-header">Upcoming Fixtures</div>
       <div class="card-body" id="d-fixtures">
-        <div class="empty-state"><i class="ti ti-calendar-event" aria-hidden="true"></i><p>Fixtures will appear once the season starts</p></div>
+        <div class="empty-state"><i class="ti ti-calendar-event"></i><p>Fixtures will appear once the season starts</p></div>
       </div>
     </div>
   </div>
@@ -273,7 +283,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
   <div class="page" id="page-squad">
     <div class="page-header">
       <div class="page-title">Squad</div>
-      <button class="btn btn-primary btn-sm" onclick="nav('transfers')"><i class="ti ti-plus" aria-hidden="true"></i> Sign Player</button>
+      <button class="btn btn-primary btn-sm" onclick="nav('transfers')"><i class="ti ti-plus"></i> Sign Player</button>
     </div>
     <div class="tabs">
       <div class="tab active" id="tab-first" onclick="switchTab('first')">First Team</div>
@@ -286,7 +296,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
           <table>
             <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Contract</th><th>Wage/wk</th><th>Morale</th></tr></thead>
             <tbody id="squad-first-body">
-              <tr><td colspan="7"><div class="empty-state"><i class="ti ti-users" aria-hidden="true"></i><p>No players yet — head to the transfer market</p></div></td></tr>
+              <tr><td colspan="7"><div class="empty-state"><i class="ti ti-users"></i><p>No players yet — head to the transfer market</p></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -299,7 +309,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
           <table>
             <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>POT</th><th>Age</th><th>Development</th><th></th></tr></thead>
             <tbody id="squad-bteam-body">
-              <tr><td colspan="7"><div class="empty-state"><i class="ti ti-school" aria-hidden="true"></i><p>No youth players yet</p></div></td></tr>
+              <tr><td colspan="7"><div class="empty-state"><i class="ti ti-school"></i><p>No youth players yet</p></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -311,7 +321,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
   <div class="page" id="page-tactics">
     <div class="page-header">
       <div class="page-title">Tactics</div>
-      <button class="btn btn-success btn-sm" onclick="saveTactics()"><i class="ti ti-device-floppy" aria-hidden="true"></i> Save</button>
+      <button class="btn btn-success btn-sm" onclick="saveTactics()"><i class="ti ti-device-floppy"></i> Save</button>
     </div>
     <div class="tactics-layout">
       <div class="card">
@@ -391,8 +401,8 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th></th><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>Manager</th></tr></thead>
-          <tbody id="table-body"><tr><td colspan="12"><div class="empty-state"><i class="ti ti-trophy" aria-hidden="true"></i><p>Table will populate once the season starts</p></div></td></tr></tbody>
+          <thead><tr><th></th><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>Manager</th><th></th></tr></thead>
+          <tbody id="table-body"><tr><td colspan="13"><div class="empty-state"><i class="ti ti-trophy"></i><p>Table will populate once the season starts</p></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -421,8 +431,8 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
     <div class="card">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Club</th><th>League</th><th>Value</th><th>Wage</th><th></th></tr></thead>
-          <tbody id="transfer-body"><tr><td colspan="9"><div class="empty-state"><i class="ti ti-loader" aria-hidden="true"></i><p>Loading players...</p></div></td></tr></tbody>
+          <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Club</th><th>Value</th><th>Wage</th><th></th></tr></thead>
+          <tbody id="transfer-body"><tr><td colspan="8"><div class="empty-state"><i class="ti ti-loader"></i><p>Loading players...</p></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -435,7 +445,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
       <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
     </div>
     <div class="card" style="overflow:hidden">
-      <div id="inbox-list"><div class="empty-state" style="padding:40px"><i class="ti ti-mail" aria-hidden="true"></i><p>No messages yet</p></div></div>
+      <div id="inbox-list"><div class="empty-state" style="padding:40px"><i class="ti ti-mail"></i><p>No messages yet</p></div></div>
     </div>
   </div>
 
@@ -458,11 +468,11 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
       </select>
       <label>Add your own thoughts (optional)</label>
       <textarea id="press-extra" placeholder="Add a sentence of your own..."></textarea>
-      <button class="btn btn-primary" onclick="postPress()"><i class="ti ti-send" aria-hidden="true"></i> Post Statement</button>
+      <button class="btn btn-primary" onclick="postPress()"><i class="ti ti-send"></i> Post Statement</button>
     </div>
     <div class="card" style="overflow:hidden">
       <div class="card-header">Manager Feed</div>
-      <div id="press-feed"><div class="empty-state" style="padding:32px"><i class="ti ti-microphone" aria-hidden="true"></i><p>No statements yet — be the first to post</p></div></div>
+      <div id="press-feed"><div class="empty-state" style="padding:32px"><i class="ti ti-microphone"></i><p>No statements yet — be the first to post</p></div></div>
     </div>
   </div>
 
@@ -472,28 +482,52 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 <!-- MOBILE NAV -->
 <div class="mobile-nav">
   <div class="mobile-nav-inner">
-    <div class="mnav-item active" id="mn-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Home</div>
-    <div class="mnav-item" id="mn-squad" onclick="nav('squad')"><i class="ti ti-users" aria-hidden="true"></i>Squad</div>
-    <div class="mnav-item" id="mn-tactics" onclick="nav('tactics')"><i class="ti ti-chess" aria-hidden="true"></i>Tactics</div>
-    <div class="mnav-item" id="mn-transfers" onclick="nav('transfers')"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>Market</div>
-    <div class="mnav-item" id="mn-inbox" onclick="nav('inbox')"><i class="ti ti-mail" aria-hidden="true"></i>Inbox</div>
+    <div class="mnav-item active" id="mn-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i>Home</div>
+    <div class="mnav-item" id="mn-squad" onclick="nav('squad')"><i class="ti ti-users"></i>Squad</div>
+    <div class="mnav-item" id="mn-tactics" onclick="nav('tactics')"><i class="ti ti-chess"></i>Tactics</div>
+    <div class="mnav-item" id="mn-transfers" onclick="nav('transfers')"><i class="ti ti-arrows-exchange"></i>Market</div>
+    <div class="mnav-item" id="mn-inbox" onclick="nav('inbox')"><i class="ti ti-mail"></i>Inbox</div>
   </div>
 </div>
 
 <!-- BID MODAL -->
-<div class="bid-modal" id="bid-modal">
-  <div class="bid-box">
-    <h3 id="bid-title">Make a Bid</h3>
+<div class="modal-overlay" id="bid-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="bid-title">Make a Bid</h3>
+      <button class="modal-close" onclick="closeBid()">✕</button>
+    </div>
     <div class="bid-field"><label>Transfer Fee (£)</label><input type="number" id="bid-fee" placeholder="e.g. 50000000"></div>
     <div class="bid-field"><label>Weekly Wage (£)</label><input type="number" id="bid-wage" placeholder="e.g. 150000"></div>
     <div class="bid-field"><label>Contract Length (years)</label><input type="number" id="bid-years" min="1" max="5" value="3"></div>
     <div class="bid-actions">
-      <button class="btn btn-primary" style="flex:1" onclick="submitBid()">Submit Bid</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitBid()"><i class="ti ti-check"></i> Sign Player</button>
       <button class="btn btn-ghost" onclick="closeBid()">Cancel</button>
     </div>
     <div id="bid-msg" style="font-size:12px;margin-top:10px;color:var(--muted)"></div>
   </div>
 </div>
+
+<!-- SQUAD VIEWER MODAL -->
+<div class="modal-overlay" id="squad-modal">
+  <div class="modal-box wide">
+    <div class="modal-header">
+      <h3 id="squad-modal-title">Squad</h3>
+      <button class="modal-close" onclick="closeSquadModal()">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Nationality</th></tr></thead>
+        <tbody id="squad-modal-body">
+          <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -553,9 +587,10 @@ function nav(page) {
   if (sn) sn.classList.add('active');
   if (mn) mn.classList.add('active');
   currentPage = page;
-  if (page === 'inbox') { loadInbox(); }
-  if (page === 'press') { loadPress(); }
-  if (page === 'table') { loadTable(); }
+  if (page === 'inbox') loadInbox();
+  if (page === 'press') loadPress();
+  if (page === 'table') loadTable();
+  if (page === 'squad') loadSquad();
 }
 
 function switchTab(tab) {
@@ -581,6 +616,15 @@ async function api(url, opts = {}) {
   return res.json();
 }
 
+// ---- TOAST ----
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
 // ---- CLOCK ----
 async function loadClock() {
   try {
@@ -600,34 +644,35 @@ async function loadSquad() {
     document.getElementById('first-count').textContent = `${first.length} Players`;
     document.getElementById('bteam-count').textContent = `${bteam.length} Players`;
 
-    // wage bill
     const wageBill = first.reduce((s, p) => s + (p.weekly_wage || 0), 0);
-    document.getElementById('d-wage').textContent = `£${(wageBill).toLocaleString()}/wk`;
+    document.getElementById('d-wage').textContent = `£${wageBill.toLocaleString()}/wk`;
 
     const fb = document.getElementById('squad-first-body');
     fb.innerHTML = first.length ? first.map(p => `
       <tr>
         <td><div class="player-row"><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
-        <td><span class="pos-tag">${p.position}</span></td>
+        <td><span class="pos-tag">${p.position||'—'}</span></td>
         <td>${ovrBadge(p.overall_rating)}</td>
-        <td>${p.age}</td>
+        <td>${p.age||'—'}</td>
         <td><span style="color:${p.expires_at_week && p.expires_at_week < 10 ? 'var(--red)' : 'var(--muted)'}">${p.expires_at_week ? 'Wk '+p.expires_at_week : '—'}</span></td>
         <td style="color:var(--muted)">£${(p.weekly_wage||0).toLocaleString()}</td>
         <td>${moraleBadge(p.happiness)}</td>
-      </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-users" aria-hidden="true"></i><p>No first team players yet</p></div></td></tr>';
+      </tr>`).join('')
+    : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-users"></i><p>No first team players yet</p></div></td></tr>';
 
     const bb = document.getElementById('squad-bteam-body');
     bb.innerHTML = bteam.length ? bteam.map(p => `
       <tr>
         <td><div class="player-row"><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
-        <td><span class="pos-tag">${p.position}</span></td>
+        <td><span class="pos-tag">${p.position||'—'}</span></td>
         <td>${ovrBadge(p.overall_rating)}</td>
-        <td><span style="color:var(--accent)">${p.potential || '—'}</span></td>
-        <td>${p.age}</td>
+        <td><span style="color:var(--accent)">${p.potential||'—'}</span></td>
+        <td>${p.age||'—'}</td>
         <td><div style="min-width:80px"><div style="font-size:11px;color:var(--muted)">${p.overall_rating}/100</div><div class="dev-bar"><div class="dev-fill" style="width:${p.overall_rating}%"></div></div></div></td>
         <td><button class="btn btn-ghost btn-sm" onclick="promotePlayer(${p.id})">Promote</button></td>
-      </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-school" aria-hidden="true"></i><p>No youth players yet</p></div></td></tr>';
-  } catch(e) { console.log('squad error',e); }
+      </tr>`).join('')
+    : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-school"></i><p>No youth players yet</p></div></td></tr>';
+  } catch(e) { console.log('squad error', e); }
 }
 
 async function promotePlayer(id) {
@@ -640,7 +685,10 @@ async function loadTable() {
   try {
     const rows = await api(`/api/table/${manager.server_id}`);
     const tbody = document.getElementById('table-body');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state" style="padding:32px"><i class="ti ti-trophy" aria-hidden="true"></i><p>Season not started yet</p></div></td></tr>'; return; }
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="13"><div class="empty-state" style="padding:32px"><i class="ti ti-trophy"></i><p>Season not started yet</p></div></td></tr>';
+      return;
+    }
     tbody.innerHTML = rows.map((r, i) => {
       const pos = i + 1;
       const isYou = r.club_id === manager.club_id;
@@ -660,70 +708,139 @@ async function loadTable() {
         <td style="color:${(r.goal_difference||0)>0?'var(--green)':(r.goal_difference||0)<0?'var(--red)':'var(--muted)'}">${(r.goal_difference||0)>0?'+':''}${r.goal_difference||0}</td>
         <td style="font-weight:700">${r.points}</td>
         <td style="font-size:12px;color:${isYou?'var(--accent)':'var(--muted)'}">${isYou?'You':'CPU'}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="viewSquad(${r.club_id}, '${r.club_name.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Squad</button></td>
       </tr>`;
     }).join('');
-  } catch(e) { console.log('table error',e); }
+  } catch(e) { console.log('table error', e); }
 }
+
+// ---- SQUAD VIEWER MODAL ----
+async function viewSquad(clubId, clubName) {
+  document.getElementById('squad-modal-title').textContent = clubName + ' — Squad';
+  document.getElementById('squad-modal-body').innerHTML =
+    '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)"><i class="ti ti-loader"></i> Loading...</td></tr>';
+  document.getElementById('squad-modal').classList.add('open');
+  try {
+    const squad = await api(`/api/squad/${clubId}`);
+    const tbody = document.getElementById('squad-modal-body');
+    if (!squad.length) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="ti ti-users"></i><p>No players assigned to this club yet</p></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = squad.map(p => `
+      <tr>
+        <td><div class="player-row"><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
+        <td><span class="pos-tag">${p.position||'—'}</span></td>
+        <td>${ovrBadge(p.overall_rating)}</td>
+        <td>${p.age||'—'}</td>
+        <td style="color:var(--muted);font-size:12px">${p.nationality||'—'}</td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('squad-modal-body').innerHTML =
+      '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--red)">Failed to load squad</td></tr>';
+  }
+}
+
+function closeSquadModal() {
+  document.getElementById('squad-modal').classList.remove('open');
+}
+
+// Close modals on overlay click
+document.getElementById('squad-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeSquadModal();
+});
+document.getElementById('bid-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeBid();
+});
 
 // ---- TRANSFERS ----
 async function loadTransfers() {
   try {
     allPlayers = await api('/api/transfers/market');
     renderPlayers(allPlayers);
-  } catch(e) { document.getElementById('transfer-body').innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="ti ti-alert-circle" aria-hidden="true"></i><p>Could not load players</p></div></td></tr>'; }
+  } catch(e) {
+    document.getElementById('transfer-body').innerHTML =
+      '<tr><td colspan="8"><div class="empty-state"><i class="ti ti-alert-circle"></i><p>Could not load players</p></div></td></tr>';
+  }
 }
 
 function renderPlayers(players) {
   document.getElementById('market-count').textContent = `${players.length} Players`;
   const tbody = document.getElementById('transfer-body');
-  if (!players.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state" style="padding:32px"><i class="ti ti-search" aria-hidden="true"></i><p>No players match your search</p></div></td></tr>'; return; }
-  tbody.innerHTML = players.slice(0,100).map(p => `<tr>
+  if (!players.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state" style="padding:32px"><i class="ti ti-search"></i><p>No players match your search</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = players.slice(0, 100).map(p => `<tr>
     <td><div class="player-row"><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
-    <td><span class="pos-tag">${p.position}</span></td>
+    <td><span class="pos-tag">${p.position||'—'}</span></td>
     <td>${ovrBadge(p.overall_rating)}</td>
-    <td>${p.age}</td>
-    <td style="font-size:12px;color:var(--muted)">${p.club_name||'Free Agent'}</td>
-    <td style="font-size:12px;color:var(--muted)">${p.league||'—'}</td>
-    <td style="color:var(--gold)">£${Math.round(p.overall_rating*900000).toLocaleString()}</td>
+    <td>${p.age||'—'}</td>
+    <td style="font-size:12px;color:var(--muted)">${p.club_name||'<span style="color:var(--green)">Free Agent</span>'}</td>
+    <td style="color:var(--gold)">£${Math.round((p.overall_rating||60)*900000).toLocaleString()}</td>
     <td style="color:var(--muted)">£${(p.weekly_wage||0).toLocaleString()}</td>
-    <td><button class="btn btn-primary btn-sm" onclick="openBid(${p.id},'${escape(p.name)}',${p.weekly_wage||0})">Bid</button></td>
+    <td><button class="btn btn-primary btn-sm" onclick="openBid(${p.id},'${(p.name||'').replace(/'/g,"\\'")}',${p.weekly_wage||0})"><i class="ti ti-writing-sign"></i> Sign</button></td>
   </tr>`).join('');
 }
 
 function filterPlayers() {
   const q = document.getElementById('search-name').value.toLowerCase();
   const pos = document.getElementById('filter-pos').value;
-  const league = document.getElementById('filter-league').value;
   renderPlayers(allPlayers.filter(p =>
-    (!q || p.name.toLowerCase().includes(q)) &&
-    (!pos || p.position === pos) &&
-    (!league || p.league === league)
+    (!q || (p.name||'').toLowerCase().includes(q)) &&
+    (!pos || p.position === pos)
   ));
 }
 
 function openBid(id, name, wage) {
   currentBidPlayer = { id, name, wage };
-  document.getElementById('bid-title').textContent = `Bid for ${unescape(name)}`;
-  document.getElementById('bid-wage').value = Math.round(wage * 1.2);
+  document.getElementById('bid-title').textContent = `Sign ${name}`;
+  document.getElementById('bid-wage').value = Math.max(wage ? Math.round(wage * 1.2) : 50000, 10000);
   document.getElementById('bid-fee').value = '';
+  document.getElementById('bid-years').value = 3;
   document.getElementById('bid-msg').textContent = '';
   document.getElementById('bid-modal').classList.add('open');
 }
 
-function closeBid() { document.getElementById('bid-modal').classList.remove('open'); }
+function closeBid() {
+  document.getElementById('bid-modal').classList.remove('open');
+}
 
 async function submitBid() {
-  const fee = parseInt(document.getElementById('bid-fee').value);
+  const fee = parseInt(document.getElementById('bid-fee').value) || 0;
   const wage = parseInt(document.getElementById('bid-wage').value);
   const years = parseInt(document.getElementById('bid-years').value);
   const msg = document.getElementById('bid-msg');
-  if (!fee || !wage || !years) { msg.textContent = 'Please fill all fields.'; msg.style.color = 'var(--red)'; return; }
-  msg.textContent = 'Submitting...'; msg.style.color = 'var(--muted)';
+
+  if (!wage || !years) { msg.textContent = 'Please fill wage and contract length.'; msg.style.color = 'var(--red)'; return; }
+  if (!manager.club_id) { msg.textContent = 'No club found — try logging out and back in.'; msg.style.color = 'var(--red)'; return; }
+
+  msg.textContent = 'Signing player...'; msg.style.color = 'var(--muted)';
+
   try {
-    const r = await api('/api/transfers/bid', { method:'POST', body: JSON.stringify({ player_id: currentBidPlayer.id, from_club_id: manager.club_id, offered_wage: wage, offered_years: years, bid_amount: fee }) });
-    if (r.success) { msg.textContent = 'Bid submitted! The player will respond within 48 hours.'; msg.style.color = 'var(--green)'; setTimeout(closeBid, 2000); }
-    else { msg.textContent = r.error || 'Bid failed.'; msg.style.color = 'var(--red)'; }
-  } catch(e) { msg.textContent = 'Server error. Try again.'; msg.style.color = 'var(--red)'; }
+    const r = await api('/api/transfers/bid', {
+      method: 'POST',
+      body: JSON.stringify({
+        player_id: currentBidPlayer.id,
+        from_club_id: manager.club_id,
+        offered_wage: wage,
+        offered_years: years,
+        bid_amount: fee
+      })
+    });
+    if (r.success) {
+      msg.textContent = '✓ ' + r.message;
+      msg.style.color = 'var(--green)';
+      showToast(`✓ ${currentBidPlayer.name} signed!`);
+      setTimeout(() => { closeBid(); loadTransfers(); loadSquad(); }, 1500);
+    } else {
+      msg.textContent = r.error || 'Signing failed.';
+      msg.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    msg.textContent = 'Server error. Try again.';
+    msg.style.color = 'var(--red)';
+  }
 }
 
 // ---- INBOX ----
@@ -741,13 +858,13 @@ async function loadInbox() {
   try {
     const notifs = await api(`/api/notifications/${manager.id}`);
     const el = document.getElementById('inbox-list');
-    if (!notifs.length) { el.innerHTML = '<div class="empty-state" style="padding:40px"><i class="ti ti-mail" aria-hidden="true"></i><p>No messages</p></div>'; return; }
+    if (!notifs.length) { el.innerHTML = '<div class="empty-state" style="padding:40px"><i class="ti ti-mail"></i><p>No messages</p></div>'; return; }
     const iconMap = { match_result:'ti-ball-football', poach_attempt:'ti-arrows-exchange', contract:'ti-file-text', week_start:'ti-calendar' };
     const colorMap = { match_result:'rgba(46,160,67,.15)', poach_attempt:'rgba(248,81,73,.15)', contract:'rgba(212,168,67,.15)', week_start:'rgba(56,139,253,.15)' };
     el.innerHTML = notifs.map(n => `
       <div class="inbox-item ${!n.read?'unread':''}" onclick="markRead(${n.id},this)">
         <div class="inbox-row">
-          <div class="inbox-icon" style="background:${colorMap[n.type]||'var(--bg3)'}"><i class="ti ${iconMap[n.type]||'ti-bell'}" style="color:var(--text)" aria-hidden="true"></i></div>
+          <div class="inbox-icon" style="background:${colorMap[n.type]||'var(--bg3)'}"><i class="ti ${iconMap[n.type]||'ti-bell'}" style="color:var(--text)"></i></div>
           <div class="inbox-text">
             <div class="inbox-title">${n.message}</div>
             <div class="inbox-time">${new Date(n.created_at).toLocaleString()}</div>
@@ -772,7 +889,7 @@ async function loadPress() {
   try {
     const posts = await api(`/api/press/${manager.server_id}`);
     const el = document.getElementById('press-feed');
-    if (!posts.length) { el.innerHTML = '<div class="empty-state" style="padding:32px"><i class="ti ti-microphone" aria-hidden="true"></i><p>No statements yet</p></div>'; return; }
+    if (!posts.length) { el.innerHTML = '<div class="empty-state" style="padding:32px"><i class="ti ti-microphone"></i><p>No statements yet</p></div>'; return; }
     el.innerHTML = posts.map(p => `
       <div class="press-post">
         <div class="press-meta">
@@ -792,7 +909,7 @@ async function postPress() {
     await api('/api/press', { method:'POST', body: JSON.stringify({ server_id: manager.server_id, club_id: manager.club_id, template_text: template, custom_text: custom }) });
     document.getElementById('press-extra').value = '';
     loadPress();
-  } catch(e) { alert('Could not post statement'); }
+  } catch(e) { showToast('Could not post statement', 'var(--red)'); }
 }
 
 // ---- TACTICS ----
@@ -822,10 +939,8 @@ async function saveTactics() {
   };
   try {
     await api('/api/tactics', { method:'POST', body: JSON.stringify(data) });
-    const btn = event.target;
-    btn.textContent = '✓ Saved';
-    setTimeout(() => { btn.innerHTML = '<i class="ti ti-device-floppy" aria-hidden="true"></i> Save'; }, 2000);
-  } catch(e) { alert('Could not save tactics'); }
+    showToast('Tactics saved!');
+  } catch(e) { showToast('Could not save tactics', 'var(--red)'); }
 }
 
 function buildPitch(f) {
@@ -849,7 +964,7 @@ function initials(name) {
 
 function ovrBadge(ovr) {
   const cls = ovr >= 85 ? 'ovr-gold' : ovr >= 75 ? 'ovr-green' : ovr >= 65 ? 'ovr-blue' : 'ovr-gray';
-  return `<div class="ovr-badge ${cls}">${ovr}</div>`;
+  return `<div class="ovr-badge ${cls}">${ovr||'—'}</div>`;
 }
 
 function moraleBadge(h) {
