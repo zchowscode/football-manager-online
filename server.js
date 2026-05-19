@@ -387,7 +387,7 @@ const fs = require('fs');
 
 app.get('/api/seed-players', async (req, res) => {
   try {
-    const csvPath = path.join(__dirname, 'data', 'players_data_light-2025_2026.csv');
+   const csvPath = path.join(__dirname, 'players_data_light-2025_2026.csv');
     const text = fs.readFileSync(csvPath, 'utf8');
     const lines = text.trim().split('\n');
     const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
