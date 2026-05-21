@@ -669,7 +669,7 @@ app.get("/api/seed-players", async (req, res) => {
     let inserted = 0, updated = 0;
 
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split("\t");
+     const cols = lines[i].split(",");
       const name = getCol(cols, "Player");
       if (!name || name === "Player" || name === "") continue;
 
