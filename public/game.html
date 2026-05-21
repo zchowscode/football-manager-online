@@ -90,15 +90,52 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .score-box{font-weight:700;font-size:15px;padding:2px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
 .result-outcome{font-size:11px;font-weight:600;width:18px;text-align:center}
 .w{color:var(--green)}.l{color:var(--red)}.d{color:var(--muted)}
-.tactics-layout{display:grid;grid-template-columns:1fr 280px;gap:16px}
-.pitch{background:linear-gradient(180deg,#1a3a1a 0%,#1d4a1d 50%,#1a3a1a 100%);border:1px solid #2a5a2a;border-radius:8px;padding:16px;min-height:440px;display:flex;flex-direction:column;justify-content:space-between;position:relative}
-.pitch::before{content:'';position:absolute;top:50%;left:10%;right:10%;height:1px;background:rgba(255,255,255,.12);transform:translateY(-50%)}
-.pitch-row{display:flex;justify-content:center;gap:12px}
-.player-dot{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
-.dot{width:38px;height:38px;border-radius:50%;background:#1f6feb;border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;transition:transform .15s}
-.dot:hover{transform:scale(1.1)}
-.dot.assigned{background:var(--green)}
-.dot-label{font-size:8px;color:rgba(255,255,255,.6);max-width:42px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── TACTICS ─────────────────────────────────────────────── */
+.tactics-layout{display:grid;grid-template-columns:1fr 300px;gap:16px}
+.pitch{
+  background:linear-gradient(180deg,#1a3a1a 0%,#1d4a1d 50%,#1a3a1a 100%);
+  border:1px solid #2a5a2a;border-radius:8px;padding:12px;
+  min-height:460px;display:flex;flex-direction:column;justify-content:space-between;
+  position:relative;gap:4px;
+}
+/* centre-line */
+.pitch::before{content:'';position:absolute;top:50%;left:8%;right:8%;height:1px;background:rgba(255,255,255,.1);pointer-events:none}
+/* centre circle */
+.pitch::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;border:1px solid rgba(255,255,255,.1);pointer-events:none}
+.pitch-row{display:flex;justify-content:center;gap:8px;flex-shrink:0}
+
+/* each draggable slot */
+.player-dot{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:grab;user-select:none;position:relative;
+}
+.player-dot:active{cursor:grabbing}
+.dot{
+  width:44px;height:44px;border-radius:50%;
+  background:#1f6feb;border:2px solid rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:#fff;
+  transition:transform .15s,background .15s,border-color .15s;
+  position:relative;z-index:1;
+}
+.player-dot:hover .dot{transform:scale(1.12)}
+.dot.assigned{background:var(--green);border-color:rgba(255,255,255,.4)}
+.dot.drag-over{border-color:#fff;border-style:dashed;transform:scale(1.12)}
+.dot-pos{font-size:8px;font-weight:800;letter-spacing:.02em}
+.dot-name{font-size:7.5px;font-weight:600;margin-top:1px;opacity:.9;max-width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot-ovr{font-size:7px;opacity:.75}
+.dot-label{font-size:8px;color:rgba(255,255,255,.55);max-width:46px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* remove-player button on dot */
+.dot-remove{
+  position:absolute;top:-4px;right:-4px;width:14px;height:14px;
+  border-radius:50%;background:var(--red);color:#fff;
+  font-size:9px;line-height:14px;text-align:center;
+  display:none;cursor:pointer;z-index:2;font-weight:700;
+}
+.player-dot:hover .dot-remove{display:block}
+
 .form-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .form-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:12px;transition:all .15s}
 .form-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
@@ -110,6 +147,20 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 .mentality-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px}
 .mentality-btn{padding:7px;text-align:center;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:12px;transition:all .15s}
 .mentality-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* squad pick list under pitch */
+.squad-pick-list{margin-top:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;max-height:200px;overflow-y:auto}
+.squad-pick-item{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  cursor:grab;font-size:12px;border-bottom:1px solid rgba(48,54,61,.4);
+  transition:background .12s;
+}
+.squad-pick-item:last-child{border-bottom:none}
+.squad-pick-item:hover{background:var(--bg3)}
+.squad-pick-item.in-xi{opacity:.4;cursor:default;pointer-events:none}
+.squad-pick-item[draggable]{cursor:grab}
+.squad-pick-pos{font-size:10px;font-weight:700;color:var(--muted);width:28px;flex-shrink:0}
+
 .search-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .search-row input,.search-row select{padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none}
 .search-row input{flex:1;min-width:160px}
@@ -198,13 +249,9 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 .mnav-item.active{color:var(--accent)}
 .mnav-item i{font-size:22px}
 @media(max-width:768px){
-  .sidebar{display:none}
-  .main{margin-left:0;padding:14px 12px 80px}
-  .mobile-nav{display:block}
-  .tactics-layout{grid-template-columns:1fr}
-  .stat-grid{grid-template-columns:1fr 1fr}
-  .stat-bars{grid-template-columns:1fr}
-  .info-grid{grid-template-columns:1fr 1fr}
+  .sidebar{display:none}.main{margin-left:0;padding:14px 12px 80px}.mobile-nav{display:block}
+  .tactics-layout{grid-template-columns:1fr}.stat-grid{grid-template-columns:1fr 1fr}
+  .stat-bars{grid-template-columns:1fr}.info-grid{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -219,10 +266,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
   </div>
   <div class="club-info-bar">
     <div class="club-badge" id="sb-badge">—</div>
-    <div class="club-details">
-      <strong id="sb-club">Loading...</strong>
-      <span id="sb-pos">—</span>
-    </div>
+    <div class="club-details"><strong id="sb-club">Loading...</strong><span id="sb-pos">—</span></div>
   </div>
   <div class="nav-section-label">Main</div>
   <div class="nav-item active" id="n-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
@@ -235,9 +279,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
   <div class="nav-item" id="n-inbox" onclick="nav('inbox')"><i class="ti ti-mail"></i> Inbox <span class="nav-badge" id="inbox-badge" style="display:none">0</span></div>
   <div class="nav-item" id="n-press" onclick="nav('press')"><i class="ti ti-microphone"></i> Press Room</div>
   <div class="nav-spacer"></div>
-  <div class="sidebar-footer">
-    <div class="logout-btn" onclick="logout()"><i class="ti ti-logout"></i> Sign out</div>
-  </div>
+  <div class="sidebar-footer"><div class="logout-btn" onclick="logout()"><i class="ti ti-logout"></i> Sign out</div></div>
 </div>
 
 <!-- MAIN -->
@@ -265,7 +307,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
       <div class="fixture-meta" id="m-meta">Set your tactics and submit when ready</div>
       <div id="ready-state">
         <button class="btn btn-success btn-lg" id="ready-btn" onclick="submitReady()">
-          <i class="ti ti-player-play"></i> Submit Tactics & Ready
+          <i class="ti ti-player-play"></i> Submit Tactics &amp; Ready
         </button>
       </div>
       <div class="ready-waiting" id="waiting-state" style="display:none">
@@ -274,15 +316,11 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
     </div>
     <div class="card">
       <div class="card-header"><span>Recent Results</span><span class="badge badge-gray" id="d-form">Form: —</span></div>
-      <div class="card-body" id="d-results">
-        <div class="empty-state"><i class="ti ti-ball-football"></i><p>No results yet</p></div>
-      </div>
+      <div class="card-body" id="d-results"><div class="empty-state"><i class="ti ti-ball-football"></i><p>No results yet</p></div></div>
     </div>
     <div class="card">
       <div class="card-header">Upcoming Fixtures</div>
-      <div class="card-body" id="d-fixtures">
-        <div class="empty-state"><i class="ti ti-calendar-event"></i><p>Fixtures will appear once the season starts</p></div>
-      </div>
+      <div class="card-body" id="d-fixtures"><div class="empty-state"><i class="ti ti-calendar-event"></i><p>Fixtures will appear once the season starts</p></div></div>
     </div>
   </div>
 
@@ -300,17 +338,17 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
       <div class="card">
         <div class="card-header">First Team <span class="badge badge-blue" id="first-count">0 Players</span></div>
         <div class="table-wrap">
-          <table><thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Contract</th><th>Wage/wk</th><th>Morale</th></tr></thead>
-          <tbody id="squad-first-body"><tr><td colspan="7"><div class="empty-state"><i class="ti ti-users"></i><p>No players yet — head to the transfer market</p></div></td></tr></tbody></table>
+          <table><thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DRI</th><th>DEF</th><th>PHY</th><th>Age</th><th>Wage/wk</th><th>Morale</th></tr></thead>
+          <tbody id="squad-first-body"></tbody></table>
         </div>
       </div>
     </div>
     <div id="squad-bteam" style="display:none">
       <div class="card">
-        <div class="card-header">B Team / Youth Development <span class="badge badge-green" id="bteam-count">0 Players</span></div>
+        <div class="card-header">B Team / Youth <span class="badge badge-green" id="bteam-count">0 Players</span></div>
         <div class="table-wrap">
           <table><thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>POT</th><th>Age</th><th>Development</th><th></th></tr></thead>
-          <tbody id="squad-bteam-body"><tr><td colspan="7"><div class="empty-state"><i class="ti ti-school"></i><p>No youth players yet</p></div></td></tr></tbody></table>
+          <tbody id="squad-bteam-body"></tbody></table>
         </div>
       </div>
     </div>
@@ -320,12 +358,16 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
   <div class="page" id="page-tactics">
     <div class="page-header">
       <div class="page-title">Tactics</div>
-      <button class="btn btn-success btn-sm" onclick="saveTactics()"><i class="ti ti-device-floppy"></i> Save</button>
+      <button class="btn btn-success btn-sm" onclick="saveTactics()"><i class="ti ti-device-floppy"></i> Save Tactics</button>
     </div>
     <div class="tactics-layout">
+      <!-- LEFT: pitch -->
       <div class="card">
-        <div class="card-header">Formation & Lineup</div>
-        <div class="card-body">
+        <div class="card-header">
+          <span>Formation &amp; Lineup</span>
+          <span id="xi-count" style="font-size:11px;color:var(--muted)">0/11 assigned</span>
+        </div>
+        <div class="card-body" style="padding-bottom:8px">
           <div class="form-btns" id="formation-btns">
             <div class="form-btn active" onclick="setFormation(this,'4-3-3')">4-3-3</div>
             <div class="form-btn" onclick="setFormation(this,'4-4-2')">4-4-2</div>
@@ -334,10 +376,18 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
             <div class="form-btn" onclick="setFormation(this,'5-3-2')">5-3-2</div>
             <div class="form-btn" onclick="setFormation(this,'4-1-4-1')">4-1-4-1</div>
           </div>
-          <div class="pitch" id="pitch"></div>
-          <div style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center"><i class="ti ti-info-circle"></i> Click a position dot to assign a player from your squad</div>
+          <!-- PITCH with drag-drop slots -->
+          <div class="pitch" id="pitch" ondragover="pitchDragOver(event)" ondrop="pitchDrop(event)"></div>
+          <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">
+            <i class="ti ti-drag-drop"></i> Drag players from the list below onto position dots
+          </p>
+          <!-- Squad pick list -->
+          <div class="squad-pick-list" id="squad-pick-list">
+            <div style="padding:12px;color:var(--muted);font-size:12px;text-align:center">Loading squad...</div>
+          </div>
         </div>
       </div>
+      <!-- RIGHT: sliders -->
       <div>
         <div class="card">
           <div class="card-header">Team Instructions</div>
@@ -372,10 +422,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 
   <!-- LEAGUE TABLE -->
   <div class="page" id="page-table">
-    <div class="page-header">
-      <div class="page-title">League Table</div>
-      <span class="badge badge-blue">Premier League</span>
-    </div>
+    <div class="page-header"><div class="page-title">League Table</div><span class="badge badge-blue">Premier League</span></div>
     <div class="card">
       <div class="card-header">
         <span>Standings</span>
@@ -393,10 +440,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 
   <!-- TRANSFERS -->
   <div class="page" id="page-transfers">
-    <div class="page-header">
-      <div class="page-title">Transfer Market</div>
-      <span class="badge badge-blue" id="market-count">0 Players</span>
-    </div>
+    <div class="page-header"><div class="page-title">Transfer Market</div><span class="badge badge-blue" id="market-count">0 Players</span></div>
     <div class="search-row">
       <input type="text" id="search-name" placeholder="Search by name..." oninput="filterPlayers()">
       <select id="filter-pos" onchange="filterPlayers()">
@@ -405,29 +449,19 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
         <option>CDM</option><option>CM</option><option>CAM</option>
         <option>LM</option><option>RM</option><option>LW</option><option>RW</option><option>ST</option>
       </select>
-      <select id="filter-league" onchange="filterPlayers()">
-        <option value="">All Leagues</option>
-        <option>Premier League</option><option>La Liga</option><option>Bundesliga</option>
-        <option>Serie A</option><option>Ligue 1</option>
-      </select>
     </div>
     <div class="card">
       <div class="table-wrap">
-        <table><thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Club</th><th>Value</th><th>Wage</th><th></th></tr></thead>
-        <tbody id="transfer-body"><tr><td colspan="8"><div class="empty-state"><i class="ti ti-loader"></i><p>Loading players...</p></div></td></tr></tbody></table>
+        <table><thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>Age</th><th>Club</th><th>Value</th><th></th></tr></thead>
+        <tbody id="transfer-body"><tr><td colspan="11"><div class="empty-state"><i class="ti ti-loader"></i><p>Loading players...</p></div></td></tr></tbody></table>
       </div>
     </div>
   </div>
 
   <!-- INBOX -->
   <div class="page" id="page-inbox">
-    <div class="page-header">
-      <div class="page-title">Inbox</div>
-      <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
-    </div>
-    <div class="card" style="overflow:hidden">
-      <div id="inbox-list"><div class="empty-state" style="padding:40px"><i class="ti ti-mail"></i><p>No messages yet</p></div></div>
-    </div>
+    <div class="page-header"><div class="page-title">Inbox</div><button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button></div>
+    <div class="card" style="overflow:hidden"><div id="inbox-list"><div class="empty-state" style="padding:40px"><i class="ti ti-mail"></i><p>No messages yet</p></div></div></div>
   </div>
 
   <!-- PRESS ROOM -->
@@ -453,7 +487,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
     </div>
     <div class="card" style="overflow:hidden">
       <div class="card-header">Manager Feed</div>
-      <div id="press-feed"><div class="empty-state" style="padding:32px"><i class="ti ti-microphone"></i><p>No statements yet — be the first to post</p></div></div>
+      <div id="press-feed"><div class="empty-state" style="padding:32px"><i class="ti ti-microphone"></i><p>No statements yet</p></div></div>
     </div>
   </div>
 
@@ -474,27 +508,14 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 <!-- PLAYER STATS MODAL -->
 <div class="modal-overlay" id="player-modal">
   <div class="modal-box xl">
-    <div class="modal-header">
-      <h3>Player Profile</h3>
-      <button class="modal-close" onclick="closePlayerModal()">✕</button>
-    </div>
+    <div class="modal-header"><h3>Player Profile</h3><button class="modal-close" onclick="closePlayerModal()">✕</button></div>
     <div class="player-hero">
       <div class="player-hero-avatar" id="pm-avatar">—</div>
-      <div class="player-hero-info">
-        <h2 id="pm-name">—</h2>
-        <div class="sub"><span id="pm-nat">—</span><span id="pm-pos-age">—</span><span id="pm-club">—</span></div>
-      </div>
-      <div class="player-hero-ovr">
-        <div class="big-ovr" id="pm-ovr">—</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">OVR</div>
-        <div style="font-size:11px;color:var(--accent);margin-top:2px"><span id="pm-pot">—</span> POT</div>
-      </div>
+      <div class="player-hero-info"><h2 id="pm-name">—</h2><div class="sub"><span id="pm-nat">—</span><span id="pm-pos-age">—</span><span id="pm-club">—</span></div></div>
+      <div class="player-hero-ovr"><div class="big-ovr" id="pm-ovr">—</div><div style="font-size:11px;color:var(--muted);margin-top:2px">OVR</div><div style="font-size:11px;color:var(--accent);margin-top:2px"><span id="pm-pot">—</span> POT</div></div>
     </div>
     <div class="stat-bars" id="pm-stats"></div>
-    <div class="contract-section">
-      <h4>Contract & Info</h4>
-      <div class="info-grid" id="pm-contract"></div>
-    </div>
+    <div class="contract-section"><h4>Contract &amp; Info</h4><div class="info-grid" id="pm-contract"></div></div>
     <div class="player-modal-actions" id="pm-actions"></div>
   </div>
 </div>
@@ -502,10 +523,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 <!-- BID MODAL -->
 <div class="modal-overlay" id="bid-modal">
   <div class="modal-box">
-    <div class="modal-header">
-      <h3 id="bid-title">Make a Bid</h3>
-      <button class="modal-close" onclick="closeBid()">✕</button>
-    </div>
+    <div class="modal-header"><h3 id="bid-title">Make a Bid</h3><button class="modal-close" onclick="closeBid()">✕</button></div>
     <div class="bid-field"><label>Transfer Fee (£)</label><input type="number" id="bid-fee" placeholder="e.g. 50000000"></div>
     <div class="bid-field"><label>Weekly Wage (£)</label><input type="number" id="bid-wage" placeholder="e.g. 150000"></div>
     <div class="bid-field"><label>Contract Length (years)</label><input type="number" id="bid-years" min="1" max="5" value="3"></div>
@@ -520,10 +538,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 <!-- MATCH RESULT MODAL -->
 <div class="modal-overlay" id="result-modal">
   <div class="modal-box wide">
-    <div class="modal-header">
-      <h3>Match Result</h3>
-      <button class="modal-close" onclick="closeResultModal()">✕</button>
-    </div>
+    <div class="modal-header"><h3>Match Result</h3><button class="modal-close" onclick="closeResultModal()">✕</button></div>
     <div class="result-hero">
       <div class="result-teams">
         <span class="result-club-name" id="r-home">—</span>
@@ -543,142 +558,174 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
   </div>
 </div>
 
-<!-- SQUAD VIEWER MODAL -->
+<!-- SQUAD VIEW MODAL -->
 <div class="modal-overlay" id="squad-modal">
   <div class="modal-box wide">
-    <div class="modal-header">
-      <h3 id="squad-modal-title">Squad</h3>
-      <button class="modal-close" onclick="closeSquadModal()">✕</button>
-    </div>
+    <div class="modal-header"><h3 id="squad-modal-title">Squad</h3><button class="modal-close" onclick="closeSquadModal()">✕</button></div>
     <div class="table-wrap" style="padding-bottom:16px">
       <table><thead><tr><th>Player</th><th>Pos</th><th>OVR</th><th>Age</th><th>Nationality</th></tr></thead>
-      <tbody id="squad-modal-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Loading...</td></tr></tbody></table>
+      <tbody id="squad-modal-body"></tbody></table>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const token = localStorage.getItem('fm_token');
+// ── AUTH ────────────────────────────────────────────────────
+const token   = localStorage.getItem('fm_token');
 const manager = JSON.parse(localStorage.getItem('fm_manager') || '{}');
 if (!token) { window.location.href = '/'; }
 
+// ── SOCKET ──────────────────────────────────────────────────
 let socket;
 try {
   socket = io();
   socket.emit('manager:join', manager.id);
-  socket.on('notification:new', () => { loadInboxCount(); if (currentPage === 'inbox') loadInbox(); });
-  socket.on('transfer:update', () => { if (currentPage === 'transfers') loadTransfers(); });
-  socket.on('match:result', (data) => showMatchResult(data));
-} catch(e) {}
+  socket.on('notification:new', () => { loadInboxCount(); if (currentPage==='inbox') loadInbox(); });
+  socket.on('transfer:update',  () => { if (currentPage==='transfers') loadTransfers(); });
+  socket.on('match:result', showMatchResult);
+} catch(e){}
 
-let currentPage = 'dashboard';
+// ── STATE ────────────────────────────────────────────────────
+let currentPage      = 'dashboard';
 let currentMentality = 'balanced';
 let currentFormation = '4-3-3';
-let allPlayers = [];
+let allPlayers       = [];
+let mySquad          = [];           // your squad players
 let currentBidPlayer = null;
-let currentPlayerModal = null;
 
+// slotAssignments: { slotKey: playerId }  e.g. { 'GK-0': 42 }
+let slotAssignments  = {};
+let dragPlayerId     = null;         // id of player being dragged
+
+// ── FORMATIONS ───────────────────────────────────────────────
 const FORMATIONS = {
   '4-3-3':   [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'LCM'},{n:'CM'},{n:'RCM'}],[{n:'LW'},{n:'ST'},{n:'RW'}]],
-  '4-4-2':   [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'LM'},{n:'LCM'},{n:'RCM'},{n:'RM'}],[{n:'ST'},{n:'ST'}]],
-  '4-2-3-1': [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'CDM'},{n:'CDM'}],[{n:'LAM'},{n:'CAM'},{n:'RAM'}],[{n:'ST'}]],
-  '3-5-2':   [[{n:'GK'}],[{n:'CB'},{n:'CB'},{n:'CB'}],[{n:'LWB'},{n:'LCM'},{n:'CM'},{n:'RCM'},{n:'RWB'}],[{n:'ST'},{n:'ST'}]],
-  '5-3-2':   [[{n:'GK'}],[{n:'LWB'},{n:'CB'},{n:'CB'},{n:'CB'},{n:'RWB'}],[{n:'LCM'},{n:'CM'},{n:'RCM'}],[{n:'ST'},{n:'ST'}]],
-  '4-1-4-1': [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'CDM'}],[{n:'LM'},{n:'LCM'},{n:'RCM'},{n:'RM'}],[{n:'ST'}]],
+  '4-4-2':   [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'LM'},{n:'LCM'},{n:'RCM'},{n:'RM'}],[{n:'ST'},{n:'ST2'}]],
+  '4-2-3-1': [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB'},{n:'RB'}],[{n:'CDM'},{n:'CDM2'}],[{n:'LAM'},{n:'CAM'},{n:'RAM'}],[{n:'ST'}]],
+  '3-5-2':   [[{n:'GK'}],[{n:'CB'},{n:'CB2'},{n:'CB3'}],[{n:'LWB'},{n:'LCM'},{n:'CM'},{n:'RCM'},{n:'RWB'}],[{n:'ST'},{n:'ST2'}]],
+  '5-3-2':   [[{n:'GK'}],[{n:'LWB'},{n:'CB'},{n:'CB2'},{n:'CB3'},{n:'RWB'}],[{n:'LCM'},{n:'CM'},{n:'RCM'}],[{n:'ST'},{n:'ST2'}]],
+  '4-1-4-1': [[{n:'GK'}],[{n:'LB'},{n:'CB'},{n:'CB2'},{n:'RB'}],[{n:'CDM'}],[{n:'LM'},{n:'LCM'},{n:'RCM'},{n:'RM'}],[{n:'ST'}]],
 };
 
+// ── INIT ─────────────────────────────────────────────────────
 document.getElementById('sb-club').textContent = manager.club_name || 'Your Club';
-document.getElementById('sb-badge').textContent = (manager.club_name || 'XX').substring(0,2).toUpperCase();
-document.getElementById('m-home').textContent = manager.club_name || 'Your Club';
+document.getElementById('sb-badge').textContent = (manager.club_name||'XX').substring(0,2).toUpperCase();
 
-loadClock(); loadTable(); loadTransfers(); loadInbox(); loadInboxCount(); loadPress(); loadSquad();
-buildPitch(currentFormation); loadNextFixture();
+loadClock(); loadTable(); loadTransfers(); loadInbox(); loadInboxCount(); loadPress();
+loadSquad(); buildPitch(currentFormation); loadNextFixture();
 
 ['squad-modal','bid-modal','player-modal','result-modal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+  document.getElementById(id).addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
 });
 
+// ── NAVIGATION ───────────────────────────────────────────────
 function nav(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item, .mnav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  ['n-','mn-'].forEach(pre => { const el = document.getElementById(pre+page); if(el) el.classList.add('active'); });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item,.mnav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  ['n-','mn-'].forEach(pre=>{ const el=document.getElementById(pre+page); if(el) el.classList.add('active'); });
   currentPage = page;
-  if (page === 'inbox') loadInbox();
-  if (page === 'press') loadPress();
-  if (page === 'table') loadTable();
-  if (page === 'squad') loadSquad();
+  if (page==='inbox')     loadInbox();
+  if (page==='press')     loadPress();
+  if (page==='table')     loadTable();
+  if (page==='squad')     loadSquad();
+  if (page==='tactics')   { loadTacticsSquad(); buildPitch(currentFormation); }
 }
 
 function switchTab(tab) {
-  document.getElementById('tab-first').classList.toggle('active', tab === 'first');
-  document.getElementById('tab-bteam').classList.toggle('active', tab === 'bteam');
-  document.getElementById('squad-first').style.display = tab === 'first' ? 'block' : 'none';
-  document.getElementById('squad-bteam').style.display = tab === 'bteam' ? 'block' : 'none';
+  document.getElementById('tab-first').classList.toggle('active', tab==='first');
+  document.getElementById('tab-bteam').classList.toggle('active', tab==='bteam');
+  document.getElementById('squad-first').style.display  = tab==='first' ? 'block':'none';
+  document.getElementById('squad-bteam').style.display  = tab==='bteam' ? 'block':'none';
 }
 
-function logout() { localStorage.removeItem('fm_token'); localStorage.removeItem('fm_manager'); window.location.href = '/'; }
-function closeSquadModal() { document.getElementById('squad-modal').classList.remove('open'); }
-function closeBid() { document.getElementById('bid-modal').classList.remove('open'); }
-function closePlayerModal() { document.getElementById('player-modal').classList.remove('open'); }
-function closeResultModal() { document.getElementById('result-modal').classList.remove('open'); }
+function logout(){ localStorage.removeItem('fm_token'); localStorage.removeItem('fm_manager'); window.location.href='/'; }
+function closeSquadModal(){ document.getElementById('squad-modal').classList.remove('open'); }
+function closeBid()        { document.getElementById('bid-modal').classList.remove('open'); }
+function closePlayerModal(){ document.getElementById('player-modal').classList.remove('open'); }
+function closeResultModal(){ document.getElementById('result-modal').classList.remove('open'); }
 
-async function api(url, opts = {}) {
+// ── API HELPER ───────────────────────────────────────────────
+async function api(url, opts={}) {
   const res = await fetch(url, {
-    headers: { 'x-auth-token': token, 'Content-Type': 'application/json', ...opts.headers },
+    headers:{'x-auth-token':token,'Content-Type':'application/json',...(opts.headers||{})},
     ...opts
   });
-  if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || res.status); }
+  if (!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error||res.status); }
   return res.json();
 }
 
 function showToast(msg, color) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.style.background = color || 'var(--green)';
-  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=color||'var(--green)';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
 }
 
+// ── CLOCK ────────────────────────────────────────────────────
 async function loadClock() {
   try {
     const c = await api('/api/clock');
     document.getElementById('clock-text').textContent = `Season ${c.current_season} · Week ${c.current_week}`;
     document.getElementById('dash-season-label').textContent = `Season ${c.current_season}`;
-  } catch(e) {}
+  } catch(e){}
 }
 
+// ── NEXT FIXTURE ─────────────────────────────────────────────
 async function loadNextFixture() {
   try {
-    const fixtures = await api(`/api/fixtures/${manager.server_id}`);
-    const upcoming = (fixtures||[]).filter(f => !f.played && (f.home_club_id===manager.club_id || f.away_club_id===manager.club_id));
-    if (!upcoming.length) { document.getElementById('m-meta').textContent = 'No upcoming fixtures yet'; return; }
+    // Use the club-specific endpoint which already JOINs names
+    const fixtures = await api(`/api/fixtures/club/${manager.club_id}`);
+    const upcoming = (fixtures||[]).filter(f => !f.played);
+    if (!upcoming.length) {
+      document.getElementById('m-home').textContent = manager.club_name || 'Your Club';
+      document.getElementById('m-away').textContent = 'TBD';
+      document.getElementById('m-meta').textContent = 'No upcoming fixtures yet';
+      return;
+    }
     const next = upcoming[0];
     const isHome = next.home_club_id === manager.club_id;
     document.getElementById('m-home').textContent = isHome ? (manager.club_name||'Your Club') : (next.home_club_name||'Opponent');
     document.getElementById('m-away').textContent = isHome ? (next.away_club_name||'Opponent') : (manager.club_name||'Your Club');
-    document.getElementById('m-meta').textContent = `Week ${next.week} · ${isHome?'Home':'Away'} — set your tactics and submit when ready`;
-  } catch(e) {}
+    document.getElementById('m-meta').textContent =
+      `Week ${next.week} · ${isHome?'HOME':'AWAY'} — set your tactics and submit when ready`;
+
+    // Also populate upcoming fixtures list on dashboard
+    const upcomingAll = fixtures.filter(f=>!f.played).slice(0,5);
+    document.getElementById('d-fixtures').innerHTML = upcomingAll.map(f => {
+      const home = f.home_club_id===manager.club_id ? (manager.club_name||'You') : f.home_club_name;
+      const away = f.away_club_id===manager.club_id ? (manager.club_name||'You') : f.away_club_name;
+      const isMine = f.home_club_id===manager.club_id||f.away_club_id===manager.club_id;
+      return `<div class="result-row">
+        <span style="color:var(--muted);font-size:11px">Wk ${f.week}</span>
+        <span style="font-weight:${isMine?600:400}">${home} <span style="color:var(--muted)">vs</span> ${away}</span>
+        <span style="font-size:11px;color:var(--muted)">${isMine?'<span style="color:var(--accent)">Your match</span>':''}</span>
+      </div>`;
+    }).join('') || '<div class="empty-state" style="padding:20px"><p>No fixtures yet</p></div>';
+  } catch(e){
+    document.getElementById('m-meta').textContent = 'Could not load fixture';
+  }
 }
 
 async function submitReady() {
   document.getElementById('ready-btn').style.display = 'none';
   document.getElementById('waiting-state').style.display = 'flex';
-  showToast('Tactics locked in — waiting for opponent!', 'var(--blue)');
-  try { await saveTactics(); } catch(e) {}
-  try { await api('/api/match/ready', { method:'POST', body: JSON.stringify({ club_id: manager.club_id, server_id: manager.server_id }) }); } catch(e) {}
+  showToast('Tactics locked in — waiting for opponent!','var(--blue)');
+  try { await saveTactics(); } catch(e){}
+  try { await api('/api/match/ready',{method:'POST',body:JSON.stringify({club_id:manager.club_id,server_id:manager.server_id})}); } catch(e){}
 }
 
 function showMatchResult(data) {
-  const myGoals = data.home_club_id === manager.club_id ? data.home_goals : data.away_goals;
-  const oppGoals = data.home_club_id === manager.club_id ? data.away_goals : data.home_goals;
-  const outcome = myGoals > oppGoals ? 'win' : myGoals < oppGoals ? 'loss' : 'draw';
-  document.getElementById('r-home').textContent = data.home_team || 'Home';
-  document.getElementById('r-away').textContent = data.away_team || 'Away';
+  const myGoals  = data.home_club_id===manager.club_id ? data.home_goals : data.away_goals;
+  const oppGoals = data.home_club_id===manager.club_id ? data.away_goals : data.home_goals;
+  const outcome  = myGoals>oppGoals?'win':myGoals<oppGoals?'loss':'draw';
+  document.getElementById('r-home').textContent = data.home_team || data.home_club_name || 'Home';
+  document.getElementById('r-away').textContent = data.away_team || data.away_club_name || 'Away';
   const scoreEl = document.getElementById('r-score');
-  scoreEl.textContent = `${data.home_goals} - ${data.away_goals}`; scoreEl.className = `result-scoreline ${outcome}`;
+  scoreEl.textContent = `${data.home_goals} - ${data.away_goals}`;
+  scoreEl.className = `result-scoreline ${outcome}`;
   document.getElementById('r-meta').textContent = `Week ${data.week||'—'} · Premier League`;
   const out = document.getElementById('r-outcome');
   if(outcome==='win'){out.textContent='Victory!';out.style.color='var(--green)';}
@@ -689,20 +736,22 @@ function showMatchResult(data) {
     <div class="result-stat-row"><span class="result-stat-home">${data.home_shots||0}</span><span class="result-stat-name">Shots</span><span class="result-stat-away">${data.away_shots||0}</span></div>
     <div class="result-stat-row"><span class="result-stat-home">${data.home_goals||0}</span><span class="result-stat-name">Goals</span><span class="result-stat-away">${data.away_goals||0}</span></div>`;
   document.getElementById('result-modal').classList.add('open');
-  document.getElementById('ready-btn').style.display = 'inline-flex';
-  document.getElementById('waiting-state').style.display = 'none';
+  document.getElementById('ready-btn').style.display='inline-flex';
+  document.getElementById('waiting-state').style.display='none';
   loadTable(); loadSquad(); loadNextFixture();
 }
 
+// ── SQUAD ────────────────────────────────────────────────────
 async function loadSquad() {
   if (!manager.club_id) return;
   try {
     const squad = await api(`/api/squad/${manager.club_id}`);
-    const first = squad.filter(p => p.team_type !== 'b');
-    const bteam = squad.filter(p => p.team_type === 'b');
+    mySquad = squad;
+    const first  = squad.filter(p=>p.team_type!=='b');
+    const bteam  = squad.filter(p=>p.team_type==='b');
     document.getElementById('first-count').textContent = `${first.length} Players`;
     document.getElementById('bteam-count').textContent = `${bteam.length} Players`;
-    const wageBill = first.reduce((s,p) => s+(p.weekly_wage||0), 0);
+    const wageBill = first.reduce((s,p)=>s+(p.weekly_wage||0),0);
     document.getElementById('d-wage').textContent = `£${wageBill.toLocaleString()}/wk`;
 
     document.getElementById('squad-first-body').innerHTML = first.length
@@ -710,12 +759,17 @@ async function loadSquad() {
           <td><div class="player-row" onclick='openPlayerModal(${JSON.stringify(p)})'><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
           <td><span class="pos-tag">${p.position||'—'}</span></td>
           <td>${ovrBadge(p.overall_rating)}</td>
+          <td style="color:var(--accent);font-weight:600">${p.pace||'—'}</td>
+          <td style="color:var(--red);font-weight:600">${p.shooting||'—'}</td>
+          <td style="color:var(--green);font-weight:600">${p.passing||'—'}</td>
+          <td style="color:var(--gold);font-weight:600">${p.dribbling||'—'}</td>
+          <td style="color:var(--muted);font-weight:600">${p.defending||'—'}</td>
+          <td style="font-weight:600">${p.physical||'—'}</td>
           <td>${p.age||'—'}</td>
-          <td><span style="color:${p.expires_at_week&&p.expires_at_week<10?'var(--red)':'var(--muted)'}">${p.expires_at_week?'Wk '+p.expires_at_week:'—'}</span></td>
           <td style="color:var(--muted)">£${(p.weekly_wage||0).toLocaleString()}</td>
           <td>${moraleBadge(p.happiness)}</td>
         </tr>`).join('')
-      : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-users"></i><p>No players yet</p></div></td></tr>';
+      : '<tr><td colspan="12"><div class="empty-state"><i class="ti ti-users"></i><p>No players yet — head to the transfer market</p></div></td></tr>';
 
     document.getElementById('squad-bteam-body').innerHTML = bteam.length
       ? bteam.map(p=>`<tr>
@@ -728,39 +782,41 @@ async function loadSquad() {
           <td><button class="btn btn-ghost btn-sm" onclick="promotePlayer(${p.id})">Promote</button></td>
         </tr>`).join('')
       : '<tr><td colspan="7"><div class="empty-state"><i class="ti ti-school"></i><p>No youth players yet</p></div></td></tr>';
-  } catch(e) {}
+  } catch(e){}
 }
 
 async function promotePlayer(id) {
-  try { await api(`/api/squad/promote/${id}`, {method:'POST'}); loadSquad(); showToast('Player promoted!'); } catch(e) {}
+  try { await api(`/api/squad/promote/${id}`,{method:'POST'}); loadSquad(); showToast('Player promoted!'); } catch(e){}
 }
 
+// ── PLAYER MODAL ─────────────────────────────────────────────
 function openPlayerModal(player) {
-  if (typeof player === 'string') { try { player = JSON.parse(player); } catch(e) { return; } }
-  currentPlayerModal = player;
-  const ovr = player.overall_rating || 0;
+  if (typeof player==='string'){ try{ player=JSON.parse(player); }catch(e){ return; } }
+  const ovr = player.overall_rating||0;
   const ovrClass = ovr>=85?'gold':ovr>=75?'green':'blue';
   document.getElementById('pm-avatar').textContent = initials(player.name);
-  document.getElementById('pm-name').textContent = player.name || '—';
-  document.getElementById('pm-nat').textContent = player.nationality || 'Unknown';
-  document.getElementById('pm-pos-age').textContent = `${player.position||'—'} · ${player.age||'—'} yrs`;
-  document.getElementById('pm-club').textContent = player.club_name || '—';
-  document.getElementById('pm-ovr').textContent = ovr;
-  document.getElementById('pm-ovr').className = `big-ovr ${ovrClass}`;
-  document.getElementById('pm-pot').textContent = player.potential || ovr;
+  document.getElementById('pm-name').textContent   = player.name||'—';
+  document.getElementById('pm-nat').textContent    = player.nationality||'Unknown';
+  document.getElementById('pm-pos-age').textContent= `${player.position||'—'} · ${player.age||'—'} yrs`;
+  document.getElementById('pm-club').textContent   = player.club_name||'—';
+  document.getElementById('pm-ovr').textContent    = ovr;
+  document.getElementById('pm-ovr').className      = `big-ovr ${ovrClass}`;
+  document.getElementById('pm-pot').textContent    = player.potential||ovr;
+
   const stats = [
-    {name:'Pace',val:player.pace||65,color:'#388bfd'},
-    {name:'Shooting',val:player.shooting||65,color:'#f85149'},
-    {name:'Passing',val:player.passing||65,color:'#2ea043'},
+    {name:'Pace',    val:player.pace||65,     color:'#388bfd'},
+    {name:'Shooting',val:player.shooting||65, color:'#f85149'},
+    {name:'Passing', val:player.passing||65,  color:'#2ea043'},
     {name:'Dribbling',val:player.dribbling||65,color:'#d4a843'},
     {name:'Defending',val:player.defending||65,color:'#8b949e'},
-    {name:'Physical',val:player.physical||65,color:'#e36209'},
+    {name:'Physical', val:player.physical||65, color:'#e36209'},
   ];
   document.getElementById('pm-stats').innerHTML = stats.map(s=>`
     <div>
       <div class="stat-bar-label"><span class="stat-bar-name">${s.name}</span><span class="stat-bar-val">${s.val}</span></div>
       <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${s.val}%;background:${s.color}"></div></div>
     </div>`).join('');
+
   document.getElementById('pm-contract').innerHTML = `
     <div class="info-item"><div class="info-item-label">Weekly Wage</div><div class="info-item-val">£${(player.weekly_wage||0).toLocaleString()}</div></div>
     <div class="info-item"><div class="info-item-label">Contract Until</div><div class="info-item-val">${player.expires_at_week?'Week '+player.expires_at_week:'Free Agent'}</div></div>
@@ -768,31 +824,36 @@ function openPlayerModal(player) {
     <div class="info-item"><div class="info-item-label">Reputation</div><div class="info-item-val">${player.reputation||50}/100</div></div>
     <div class="info-item"><div class="info-item-label">Nationality</div><div class="info-item-val">${player.nationality||'—'}</div></div>
     <div class="info-item"><div class="info-item-label">Age</div><div class="info-item-val">${player.age||'—'}</div></div>`;
+
   const actEl = document.getElementById('pm-actions');
-  if (player.club_id === manager.club_id) {
+  if (player.club_id===manager.club_id) {
     actEl.innerHTML = `<button class="btn btn-ghost" onclick="closePlayerModal()">Close</button>`;
   } else {
     actEl.innerHTML = `
-      <button class="btn btn-primary" style="flex:1" onclick="closePlayerModal();openBid(${player.id},'${(player.name||'').replace(/'/g,"\\'")}',${player.weekly_wage||0})"><i class="ti ti-writing-sign"></i> Sign This Player</button>
+      <button class="btn btn-primary" style="flex:1"
+        onclick="closePlayerModal();openBid(${player.id},'${(player.name||'').replace(/'/g,"\\'")}',${player.weekly_wage||0})">
+        <i class="ti ti-writing-sign"></i> Sign This Player
+      </button>
       <button class="btn btn-ghost" onclick="closePlayerModal()">Close</button>`;
   }
   document.getElementById('player-modal').classList.add('open');
 }
 
+// ── LEAGUE TABLE ─────────────────────────────────────────────
 async function loadTable() {
   if (!manager.server_id) return;
   try {
     const rows = await api(`/api/table/${manager.server_id}`);
     const tbody = document.getElementById('table-body');
-    if (!rows.length) { tbody.innerHTML='<tr><td colspan="13"><div class="empty-state" style="padding:32px"><i class="ti ti-trophy"></i><p>Season not started yet</p></div></td></tr>'; return; }
-    tbody.innerHTML = rows.map((r,i) => {
+    if (!rows.length){ tbody.innerHTML='<tr><td colspan="13"><div class="empty-state" style="padding:32px"><i class="ti ti-trophy"></i><p>Season not started yet</p></div></td></tr>'; return; }
+    tbody.innerHTML = rows.map((r,i)=>{
       const pos=i+1, isYou=r.club_id===manager.club_id;
       const ind = pos<=4?'pos-cl':pos<=6?'pos-cl2':pos>=18?'pos-rl':'pos-none';
       if(isYou){
-        document.getElementById('d-pos').textContent=pos+suffix(pos);
-        document.getElementById('d-pts').textContent=r.points;
-        document.getElementById('d-played').textContent=r.played;
-        document.getElementById('sb-pos').textContent=pos+suffix(pos)+' · '+r.points+' pts';
+        document.getElementById('d-pos').textContent   = pos+suffix(pos);
+        document.getElementById('d-pts').textContent   = r.points;
+        document.getElementById('d-played').textContent= r.played;
+        document.getElementById('sb-pos').textContent  = pos+suffix(pos)+' · '+r.points+' pts';
       }
       return `<tr class="${isYou?'you-row':''}">
         <td><div class="pos-indicator ${ind}"></div></td>
@@ -803,14 +864,14 @@ async function loadTable() {
         <td style="color:${(r.goal_difference||0)>0?'var(--green)':(r.goal_difference||0)<0?'var(--red)':'var(--muted)'}">${(r.goal_difference||0)>0?'+':''}${r.goal_difference||0}</td>
         <td style="font-weight:700">${r.points}</td>
         <td style="font-size:12px;color:${isYou?'var(--accent)':'var(--muted)'}">${isYou?'You':'CPU'}</td>
-        <td><button class="btn btn-ghost btn-sm" onclick="viewSquad(${r.club_id},'${r.club_name.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Squad</button></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="viewSquad(${r.club_id},'${r.club_name.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i></button></td>
       </tr>`;
     }).join('');
-  } catch(e) {}
+  } catch(e){}
 }
 
 async function viewSquad(clubId, clubName) {
-  document.getElementById('squad-modal-title').textContent = clubName + ' — Squad';
+  document.getElementById('squad-modal-title').textContent = clubName+' — Squad';
   document.getElementById('squad-modal-body').innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Loading...</td></tr>';
   document.getElementById('squad-modal').classList.add('open');
   try {
@@ -823,67 +884,71 @@ async function viewSquad(clubId, clubName) {
           <td>${p.age||'—'}</td>
           <td style="color:var(--muted);font-size:12px">${p.nationality||'—'}</td>
         </tr>`).join('')
-      : '<tr><td colspan="5"><div class="empty-state"><i class="ti ti-users"></i><p>No players yet</p></div></td></tr>';
-  } catch(e) { document.getElementById('squad-modal-body').innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--red)">Failed to load squad</td></tr>'; }
+      : '<tr><td colspan="5"><div class="empty-state"><i class="ti ti-users"></i><p>No players</p></div></td></tr>';
+  } catch(e){ document.getElementById('squad-modal-body').innerHTML='<tr><td colspan="5" style="padding:20px;color:var(--red)">Failed to load</td></tr>'; }
 }
 
+// ── TRANSFERS ────────────────────────────────────────────────
 async function loadTransfers() {
   try {
     allPlayers = await api('/api/transfers/market');
     document.getElementById('filter-pos').value='';
-    document.getElementById('filter-league').value='';
     document.getElementById('search-name').value='';
     renderPlayers(allPlayers);
-  } catch(e) { document.getElementById('transfer-body').innerHTML='<tr><td colspan="8"><div class="empty-state"><i class="ti ti-alert-circle"></i><p>Could not load players</p></div></td></tr>'; }
+  } catch(e){ document.getElementById('transfer-body').innerHTML='<tr><td colspan="11"><div class="empty-state"><i class="ti ti-alert-circle"></i><p>Could not load players</p></div></td></tr>'; }
 }
 
 function renderPlayers(players) {
   document.getElementById('market-count').textContent = `${players.length} Players`;
   const tbody = document.getElementById('transfer-body');
-  if (!players.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty-state" style="padding:32px"><i class="ti ti-search"></i><p>No players match your search</p></div></td></tr>'; return; }
+  if (!players.length){ tbody.innerHTML='<tr><td colspan="11"><div class="empty-state" style="padding:32px"><i class="ti ti-search"></i><p>No players match</p></div></td></tr>'; return; }
   tbody.innerHTML = players.slice(0,100).map(p=>`<tr>
     <td><div class="player-row" onclick='openPlayerModal(${JSON.stringify(p)})'><div class="avatar">${initials(p.name)}</div><span style="font-weight:500">${p.name}</span></div></td>
     <td><span class="pos-tag">${p.position||'—'}</span></td>
     <td>${ovrBadge(p.overall_rating)}</td>
+    <td style="color:var(--accent);font-weight:600">${p.pace||'—'}</td>
+    <td style="color:var(--red);font-weight:600">${p.shooting||'—'}</td>
+    <td style="color:var(--green);font-weight:600">${p.passing||'—'}</td>
+    <td style="color:var(--muted);font-weight:600">${p.defending||'—'}</td>
     <td>${p.age||'—'}</td>
     <td style="font-size:12px;color:var(--muted)">${p.club_name||'<span style="color:var(--green)">Free Agent</span>'}</td>
     <td style="color:var(--gold)">£${Math.round((p.overall_rating||60)*900000).toLocaleString()}</td>
-    <td style="color:var(--muted)">£${(p.weekly_wage||0).toLocaleString()}</td>
     <td><button class="btn btn-primary btn-sm" onclick="openBid(${p.id},'${(p.name||'').replace(/'/g,"\\'")}',${p.weekly_wage||0})"><i class="ti ti-writing-sign"></i> Sign</button></td>
   </tr>`).join('');
 }
 
 function filterPlayers() {
-  const q=document.getElementById('search-name').value.toLowerCase();
-  const pos=document.getElementById('filter-pos').value;
+  const q  = document.getElementById('search-name').value.toLowerCase();
+  const pos= document.getElementById('filter-pos').value;
   renderPlayers(allPlayers.filter(p=>(!q||(p.name||'').toLowerCase().includes(q))&&(!pos||p.position===pos)));
 }
 
-function openBid(id, name, wage) {
-  currentBidPlayer = {id, name, wage};
-  document.getElementById('bid-title').textContent = `Sign ${name}`;
-  document.getElementById('bid-wage').value = Math.max(wage?Math.round(wage*1.2):50000, 10000);
-  document.getElementById('bid-fee').value = '';
-  document.getElementById('bid-years').value = 3;
-  document.getElementById('bid-msg').textContent = '';
+function openBid(id,name,wage) {
+  currentBidPlayer={id,name,wage};
+  document.getElementById('bid-title').textContent=`Sign ${name}`;
+  document.getElementById('bid-wage').value=Math.max(wage?Math.round(wage*1.2):50000,10000);
+  document.getElementById('bid-fee').value='';
+  document.getElementById('bid-years').value=3;
+  document.getElementById('bid-msg').textContent='';
   document.getElementById('bid-modal').classList.add('open');
 }
 
 async function submitBid() {
-  const fee=parseInt(document.getElementById('bid-fee').value)||0;
-  const wage=parseInt(document.getElementById('bid-wage').value);
-  const years=parseInt(document.getElementById('bid-years').value);
-  const msg=document.getElementById('bid-msg');
-  if(!wage||!years){msg.textContent='Please fill wage and contract length.';msg.style.color='var(--red)';return;}
+  const fee  = parseInt(document.getElementById('bid-fee').value)||0;
+  const wage = parseInt(document.getElementById('bid-wage').value);
+  const yrs  = parseInt(document.getElementById('bid-years').value);
+  const msg  = document.getElementById('bid-msg');
+  if(!wage||!yrs){msg.textContent='Please fill wage and contract length.';msg.style.color='var(--red)';return;}
   if(!manager.club_id){msg.textContent='No club found.';msg.style.color='var(--red)';return;}
-  msg.textContent='Submitting bid...';msg.style.color='var(--muted)';
+  msg.textContent='Submitting...';msg.style.color='var(--muted)';
   try {
-    const r=await api('/api/transfers/bid',{method:'POST',body:JSON.stringify({player_id:currentBidPlayer.id,from_club_id:manager.club_id,offered_wage:wage,offered_years:years,bid_amount:fee||0})});
+    const r=await api('/api/transfers/bid',{method:'POST',body:JSON.stringify({player_id:currentBidPlayer.id,from_club_id:manager.club_id,offered_wage:wage,offered_years:yrs,bid_amount:fee||0})});
     if(r.success){msg.textContent='✓ '+r.message;msg.style.color='var(--green)';showToast(`${currentBidPlayer.name} signed!`);setTimeout(()=>{closeBid();loadTransfers();loadSquad();},1500);}
     else{msg.textContent=r.error||'Bid failed.';msg.style.color='var(--red)';}
   } catch(e){msg.textContent=e.message||'Server error.';msg.style.color='var(--red)';}
 }
 
+// ── INBOX ────────────────────────────────────────────────────
 async function loadInboxCount() {
   try {
     const notifs=await api(`/api/notifications/${manager.id}`);
@@ -917,6 +982,7 @@ async function loadInbox() {
 async function markRead(id,el){el.classList.remove('unread');try{await api(`/api/notifications/${id}/read`,{method:'POST'});loadInboxCount();}catch(e){}}
 async function markAllRead(){document.querySelectorAll('.inbox-item.unread').forEach(el=>el.classList.remove('unread'));try{await api(`/api/notifications/${manager.id}/read-all`,{method:'POST'});loadInboxCount();}catch(e){}}
 
+// ── PRESS ────────────────────────────────────────────────────
 async function loadPress() {
   try {
     const posts=await api(`/api/press/${manager.server_id}`);
@@ -934,36 +1000,162 @@ async function loadPress() {
 async function postPress() {
   const template=document.getElementById('press-template').value;
   const custom=document.getElementById('press-extra').value.trim();
-  try{await api('/api/press',{method:'POST',body:JSON.stringify({server_id:manager.server_id,club_id:manager.club_id,template_text:template,custom_text:custom})});document.getElementById('press-extra').value='';loadPress();showToast('Statement posted!');}
-  catch(e){showToast('Could not post statement','var(--red)');}
+  try{
+    await api('/api/press',{method:'POST',body:JSON.stringify({server_id:manager.server_id,club_id:manager.club_id,template_text:template,custom_text:custom})});
+    document.getElementById('press-extra').value='';
+    loadPress(); showToast('Statement posted!');
+  }catch(e){showToast('Could not post','var(--red)');}
 }
 
-function setFormation(el,f){document.querySelectorAll('.form-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');currentFormation=f;buildPitch(f);}
-function setMentality(el,v){document.querySelectorAll('.mentality-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');currentMentality=v;}
+// ── TACTICS ─────────────────────────────────────────────────
+function setFormation(el,f){
+  document.querySelectorAll('.form-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  currentFormation=f;
+  // Clear assignments when formation changes
+  slotAssignments={};
+  buildPitch(f);
+  loadTacticsSquad();
+}
+
+function setMentality(el,v){
+  document.querySelectorAll('.mentality-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  currentMentality=v;
+}
 
 async function saveTactics(){
-  const data={club_id:manager.club_id,formation:currentFormation,pressing:parseInt(document.getElementById('sl-press').value),defensive_line:parseInt(document.getElementById('sl-def').value),tempo:parseInt(document.getElementById('sl-tempo').value),width:parseInt(document.getElementById('sl-width').value),attacking_risk:parseInt(document.getElementById('sl-risk').value),mentality:currentMentality};
-  try{await api('/api/tactics',{method:'POST',body:JSON.stringify(data)});showToast('Tactics saved!');}catch(e){showToast('Could not save tactics','var(--red)');}
+  const data={
+    club_id:manager.club_id,
+    formation:currentFormation,
+    pressing:parseInt(document.getElementById('sl-press').value),
+    defensive_line:parseInt(document.getElementById('sl-def').value),
+    tempo:parseInt(document.getElementById('sl-tempo').value),
+    width:parseInt(document.getElementById('sl-width').value),
+    attacking_risk:parseInt(document.getElementById('sl-risk').value),
+    mentality:currentMentality
+  };
+  try{await api('/api/tactics',{method:'POST',body:JSON.stringify(data)});showToast('Tactics saved!');}
+  catch(e){showToast('Could not save tactics','var(--red)');}
 }
 
+// ── PITCH BUILD ──────────────────────────────────────────────
 function buildPitch(f) {
-  const pitch=document.getElementById('pitch');
-  const rows=FORMATIONS[f]||FORMATIONS['4-3-3'];
-  pitch.innerHTML='';
-  [...rows].reverse().forEach(row=>{
-    const div=document.createElement('div');
-    div.className='pitch-row';
-    row.forEach(slot=>{
-      div.innerHTML+=`<div class="player-dot"><div class="dot">${slot.n}</div><div class="dot-label">${slot.n}</div></div>`;
+  const pitch = document.getElementById('pitch');
+  const rows  = FORMATIONS[f] || FORMATIONS['4-3-3'];
+  pitch.innerHTML = '';
+
+  // rows[0] = GK row (bottom) → reverse so GK appears at bottom of pitch
+  [...rows].reverse().forEach((row, ri) => {
+    const div = document.createElement('div');
+    div.className = 'pitch-row';
+    row.forEach(slot => {
+      const key = slot.n;
+      const assigned = slotAssignments[key];
+      const player   = assigned ? mySquad.find(p=>p.id===assigned) : null;
+
+      div.innerHTML += `
+        <div class="player-dot"
+             data-slot="${key}"
+             ondragover="slotDragOver(event,this)"
+             ondragleave="slotDragLeave(event,this)"
+             ondrop="slotDrop(event,'${key}')">
+          <div class="dot ${player?'assigned':''}" title="${player?player.name:key}">
+            ${player
+              ? `<div class="dot-pos">${player.position||key}</div>
+                 <div class="dot-name">${player.name.split(' ').slice(-1)[0]}</div>
+                 <div class="dot-ovr">${player.overall_rating}</div>`
+              : `<span style="font-size:9px;font-weight:700;opacity:.8">${key}</span>`
+            }
+            ${player ? `<div class="dot-remove" onclick="removeFromSlot('${key}')">✕</div>` : ''}
+          </div>
+          <div class="dot-label">${player ? (player.name.split(' ').slice(-1)[0]) : key}</div>
+        </div>`;
     });
     pitch.appendChild(div);
   });
+  updateXICount();
 }
 
-function initials(name){return(name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
-function ovrBadge(ovr){const cls=ovr>=85?'ovr-gold':ovr>=75?'ovr-green':ovr>=65?'ovr-blue':'ovr-gray';return`<div class="ovr-badge ${cls}">${ovr||'—'}</div>`;}
-function moraleBadge(h){if(!h&&h!==0)return'<span class="badge badge-gray">—</span>';if(h>=75)return'<span class="badge badge-green">Happy</span>';if(h>=50)return'<span class="badge badge-blue">Content</span>';if(h>=30)return'<span class="badge badge-gold">Unsettled</span>';return'<span class="badge badge-red">Unhappy</span>';}
-function suffix(n){const s=['th','st','nd','rd'],v=n%100;return s[(v-20)%10]||s[v]||s[0];}
+function updateXICount(){
+  const n = Object.keys(slotAssignments).length;
+  document.getElementById('xi-count').textContent = `${n}/11 assigned`;
+}
+
+function removeFromSlot(key){
+  delete slotAssignments[key];
+  buildPitch(currentFormation);
+  loadTacticsSquad();
+}
+
+// ── SQUAD PICK LIST ──────────────────────────────────────────
+async function loadTacticsSquad() {
+  if (!manager.club_id) return;
+  if (!mySquad.length) {
+    try { mySquad = await api(`/api/squad/${manager.club_id}`); } catch(e){}
+  }
+  const first = mySquad.filter(p=>p.team_type!=='b');
+  const assignedIds = new Set(Object.values(slotAssignments));
+  const el = document.getElementById('squad-pick-list');
+  if (!first.length){
+    el.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px;text-align:center">No squad — sign players first</div>';
+    return;
+  }
+  el.innerHTML = first.map(p=>`
+    <div class="squad-pick-item ${assignedIds.has(p.id)?'in-xi':''}"
+         draggable="${!assignedIds.has(p.id)}"
+         data-player-id="${p.id}"
+         ondragstart="pickDragStart(event,${p.id})">
+      <span class="squad-pick-pos">${p.position||'—'}</span>
+      <div class="avatar" style="width:22px;height:22px;font-size:8px">${initials(p.name)}</div>
+      <span style="flex:1;font-weight:500">${p.name}</span>
+      <span style="color:var(--muted);font-size:11px">${ovrBadge(p.overall_rating)}</span>
+    </div>`).join('');
+}
+
+// ── DRAG & DROP ──────────────────────────────────────────────
+function pickDragStart(e, playerId) {
+  dragPlayerId = playerId;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', playerId);
+}
+
+function slotDragOver(e, dotEl) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  dotEl.querySelector('.dot').classList.add('drag-over');
+}
+
+function slotDragLeave(e, dotEl) {
+  dotEl.querySelector('.dot').classList.remove('drag-over');
+}
+
+function slotDrop(e, slotKey) {
+  e.preventDefault();
+  const pid = parseInt(e.dataTransfer.getData('text/plain') || dragPlayerId);
+  if (!pid) return;
+
+  // If this player is already in another slot, remove them first
+  Object.keys(slotAssignments).forEach(k => {
+    if (slotAssignments[k] === pid) delete slotAssignments[k];
+  });
+
+  slotAssignments[slotKey] = pid;
+  buildPitch(currentFormation);
+  loadTacticsSquad();
+  dragPlayerId = null;
+}
+
+// Allow dropping anywhere on the pitch (for touch-friendly fallback)
+function pitchDragOver(e){ e.preventDefault(); }
+function pitchDrop(e){ e.preventDefault(); }
+
+// ── UTILS ────────────────────────────────────────────────────
+function initials(name){ return(name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function ovrBadge(ovr){ const cls=ovr>=85?'ovr-gold':ovr>=75?'ovr-green':ovr>=65?'ovr-blue':'ovr-gray'; return`<div class="ovr-badge ${cls}">${ovr||'—'}</div>`; }
+function moraleBadge(h){ if(!h&&h!==0)return'<span class="badge badge-gray">—</span>';if(h>=75)return'<span class="badge badge-green">Happy</span>';if(h>=50)return'<span class="badge badge-blue">Content</span>';if(h>=30)return'<span class="badge badge-gold">Unsettled</span>';return'<span class="badge badge-red">Unhappy</span>'; }
+function suffix(n){ const s=['th','st','nd','rd'],v=n%100; return s[(v-20)%10]||s[v]||s[0]; }
 </script>
 </body>
 </html>
+HTMLEOF
