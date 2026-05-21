@@ -96,7 +96,10 @@ io.on("connection", (socket) => {
     onlineManagers.delete(socket.id);
   });
 });
-// Resolve expired transfer bids every hour
+
+// ============================================================
+// RESOLVE EXPIRED TRANSFER BIDS - every hour
+// ============================================================
 cron.schedule("0 * * * *", async () => {
   try {
     const [expiredBids] = await pool.execute(
@@ -141,6 +144,7 @@ cron.schedule("0 * * * *", async () => {
     console.error('Bid resolution error:', err.message);
   }
 });
+
 // ============================================================
 // GAME CLOCK - every 2 real days = 1 game week
 // ============================================================
@@ -258,15 +262,21 @@ async function simulateMatchday(week, season) {
         });
       }
 
+      // PATCH 3: enriched match:result payload so the frontend result modal works
       io.to(`server:${match.server_id}`).emit('match:result', {
-        fixture_id: match.id,
-        result: resultStr,
-        home_goals: result.homeGoals,
-        away_goals: result.awayGoals,
-        home_possession: result.homePossession,
-        home_shots: result.homeShots,
-        away_shots: result.awayShots,
-        scorers: scorersSummary
+        fixture_id:       match.id,
+        home_club_id:     match.home_club_id,
+        away_club_id:     match.away_club_id,
+        home_team:        homeClub.name,
+        away_team:        awayClub.name,
+        week:             week,
+        home_goals:       result.homeGoals,
+        away_goals:       result.awayGoals,
+        home_possession:  result.homePossession,
+        away_possession:  result.awayPossession,
+        home_shots:       result.homeShots,
+        away_shots:       result.awayShots,
+        scorers:          scorersSummary
       });
     }
   } catch (err) {
@@ -316,8 +326,6 @@ async function endSeason(season) {
     "UPDATE game_clock SET current_week = 1, current_season = current_season + 1"
   );
 }
-
-
 
 // ============================================================
 // ROUTES
@@ -389,11 +397,18 @@ app.get("/api/squad/:clubId", async (req, res) => {
   }
 });
 
-// Fixtures for a server
+// PATCH 2: Fixtures for a server — JOINs club names
 app.get("/api/fixtures/:serverId", async (req, res) => {
   try {
     const [rows] = await pool.execute(
-      "SELECT * FROM fixtures WHERE server_id = ? ORDER BY week ASC",
+      `SELECT f.*,
+         hc.name AS home_club_name,
+         ac.name AS away_club_name
+       FROM fixtures f
+       JOIN clubs hc ON hc.id = f.home_club_id
+       JOIN clubs ac ON ac.id = f.away_club_id
+       WHERE f.server_id = ?
+       ORDER BY f.week ASC`,
       [req.params.serverId]
     );
     res.json(rows);
@@ -633,36 +648,143 @@ app.get("/api/seed-contracts", async (req, res) => {
   }
 });
 
-// Seed players
+// PATCH 1: Seed players — derives real per-position stats from CSV
+// CSV uses TABS as delimiters
 app.get("/api/seed-players", async (req, res) => {
   try {
     const csvPath = path.join(__dirname, "players_data_light-2025_2026.csv");
     const text = fs.readFileSync(csvPath, "utf8");
     const lines = text.trim().split(/\r?\n/);
-    const headers = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
+    const headers = lines[0].split("\t").map(h => h.replace(/"/g, "").trim());
 
-    let inserted = 0;
+    const getCol = (cols, name) => {
+      const idx = headers.indexOf(name);
+      return idx >= 0 ? (cols[idx] || "").replace(/"/g, "").trim() : "0";
+    };
+
+    const clamp = (v, min, max) => Math.min(max, Math.max(min, Math.round(v)));
+    const norm = (raw, base, scale, min = 40, max = 95) =>
+      clamp(65 + (raw - base) * scale, min, max);
+
+    let inserted = 0, updated = 0;
+
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(",");
-      const get = (name) => cols[headers.indexOf(name)]?.replace(/"/g, "").trim() || null;
-      const name = get("Player");
-      const position = get("Pos");
-      const age = parseInt(get("Age")) || 22;
-      const nationality = get("Nation");
-      const goals = parseInt(get("Gls")) || 0;
-      const assists = parseInt(get("Ast")) || 0;
-      const overall = Math.min(90, Math.max(50, 60 + goals + assists));
-      if (!name || name === "Player") continue;
+      const cols = lines[i].split("\t");
+      const name = getCol(cols, "Player");
+      if (!name || name === "Player" || name === "") continue;
 
-      await pool.execute(
-        "INSERT IGNORE INTO players (name, position, overall_rating, potential, age, nationality, pace, shooting, passing, dribbling, defending, physical, reputation, happiness) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [name, position, overall, overall + Math.floor(Math.random() * 5), age, nationality, 65, 65, 65, 65, 65, 65, 70, 80]
+      const rawPos   = getCol(cols, "Pos") || "MF";
+      const age      = parseFloat(getCol(cols, "Age")) || 22;
+      const nation   = getCol(cols, "Nation") || "";
+      const mp       = parseFloat(getCol(cols, "MP")) || 1;
+      const starts   = parseFloat(getCol(cols, "Starts")) || 0;
+      const nineties = Math.max(parseFloat(getCol(cols, "90s")) || 0.5, 0.5);
+      const gls      = parseFloat(getCol(cols, "Gls")) || 0;
+      const ast      = parseFloat(getCol(cols, "Ast")) || 0;
+      const sh       = parseFloat(getCol(cols, "Sh")) || 0;
+      const sot      = parseFloat(getCol(cols, "SoT")) || 0;
+      const crs      = parseFloat(getCol(cols, "Crs")) || 0;
+      const tklW     = parseFloat(getCol(cols, "TklW")) || 0;
+      const intc     = parseFloat(getCol(cols, "Int")) || 0;
+      const fld      = parseFloat(getCol(cols, "Fld")) || 0;
+      const fls      = parseFloat(getCol(cols, "Fls")) || 0;
+      const minPlyd  = parseFloat(getCol(cols, "Min")) || 0;
+
+      // Per-90 rates
+      const glsP90 = gls / nineties;
+      const astP90 = ast / nineties;
+      const shP90  = sh  / nineties;
+      const sotP90 = sot / nineties;
+      const crsP90 = crs / nineties;
+      const tklP90 = tklW / nineties;
+      const intP90 = intc / nineties;
+      const fldP90 = fld / nineties;
+
+      const primaryPos = rawPos.split(",")[0].trim();
+      const isGK = primaryPos === "GK";
+      const isFW = primaryPos === "FW";
+      const isDF = primaryPos === "DF";
+
+      // Overall rating
+      let overall;
+      if (isGK) {
+        const savePct = parseFloat(getCol(cols, "Save%")) || 65;
+        const csPct   = parseFloat(getCol(cols, "CS%"))   || 0;
+        const ga90    = parseFloat(getCol(cols, "GA90"))  || 2;
+        overall = clamp(savePct * 0.5 + csPct * 0.3 + (2.5 - ga90) * 8 + 40, 50, 90);
+      } else if (isFW) {
+        overall = clamp(60 + glsP90 * 18 + astP90 * 8 + sotP90 * 3, 50, 92);
+      } else if (isDF) {
+        overall = clamp(60 + tklP90 * 10 + intP90 * 10 - fls * 0.08, 50, 90);
+      } else {
+        overall = clamp(60 + glsP90 * 12 + astP90 * 12 + tklP90 * 6 + crsP90 * 2, 50, 91);
+      }
+
+      // Individual stats
+      let pace, shooting, passing, dribbling, defending, physical;
+
+      if (isGK) {
+        const savePct = parseFloat(getCol(cols, "Save%")) || 65;
+        pace      = clamp(50 + Math.random() * 15, 45, 70);
+        shooting  = clamp(35 + Math.random() * 10, 30, 50);
+        passing   = clamp(55 + crsP90 * 4, 50, 78);
+        dribbling = clamp(45 + Math.random() * 12, 40, 62);
+        defending = clamp(savePct * 0.92 + 4, 55, 92);
+        physical  = clamp(60 + (minPlyd / 2700) * 15, 55, 85);
+      } else {
+        pace      = norm(fldP90 + (29 - Math.min(age, 35)) * 0.2, 1.5, 11);
+        shooting  = norm(glsP90 * 2 + sotP90 * 0.8, 0.6, 16);
+        passing   = norm(astP90 * 2.5 + crsP90 * 0.25, 0.5, 18);
+        dribbling = norm(fldP90 * 1.2, 1.2, 13);
+        const defMult = isDF ? 1.5 : 1.0;
+        defending = norm((tklP90 + intP90) * defMult, 2.0, 9);
+        const startRatio = mp > 0 ? starts / mp : 0.5;
+        physical  = norm(startRatio * 5 + fls * 0.04, 3.0, 10);
+      }
+
+      // Potential
+      const bonus = age <= 20 ? 10 : age <= 22 ? 7 : age <= 24 ? 4 : age <= 27 ? 2 : 0;
+      const potential = clamp(overall + Math.floor(Math.random() * (bonus + 1)), overall, 96);
+
+      // Nationality: "us USA" → "USA"
+      const nationality = nation.split(" ").slice(-1)[0] || nation;
+
+      const reputation = clamp(overall * 0.8 + (mp / 38) * 10, 30, 99);
+
+      // Upsert
+      const [existing] = await pool.execute(
+        "SELECT id FROM players WHERE name = ? LIMIT 1", [name]
       );
-      inserted++;
+
+      if (existing.length > 0) {
+        await pool.execute(
+          `UPDATE players SET
+            position=?, overall_rating=?, potential=?, age=?, nationality=?,
+            pace=?, shooting=?, passing=?, dribbling=?, defending=?, physical=?,
+            reputation=?
+           WHERE id=?`,
+          [primaryPos, overall, potential, Math.round(age), nationality,
+           pace, shooting, passing, dribbling, defending, physical,
+           reputation, existing[0].id]
+        );
+        updated++;
+      } else {
+        await pool.execute(
+          `INSERT INTO players
+            (name, position, overall_rating, potential, age, nationality,
+             pace, shooting, passing, dribbling, defending, physical,
+             reputation, happiness)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,80)`,
+          [name, primaryPos, overall, potential, Math.round(age), nationality,
+           pace, shooting, passing, dribbling, defending, physical, reputation]
+        );
+        inserted++;
+      }
     }
 
-    res.json({ success: true, inserted });
+    res.json({ success: true, inserted, updated });
   } catch (err) {
+    console.error("Seed error:", err);
     res.status(500).json({ error: err.message });
   }
 });
